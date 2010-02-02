@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+// musty gps patch
+
 package com.android.internal.location;
 
 import org.apache.http.HttpEntity;
@@ -26,7 +28,11 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.conn.params.ConnRouteParams;
 
 import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Date;
 import java.util.Properties;
 import java.util.Random;
 
@@ -85,6 +91,12 @@ public class GpsXtraDownloader {
         byte[] result = null;
         int startIndex = mNextServerIndex;
 
+	result = loadFromCache();
+	if(result != null) {
+		Log.d(TAG, "using xtra from cache");
+		return result;
+	}
+
         if (mXtraServers == null) {
             return null;
         }
@@ -102,6 +114,10 @@ public class GpsXtraDownloader {
             if (mNextServerIndex == startIndex) break;
         }
     
+	if(result != null) {
+		saveToCache(result);
+	}
+
         return result;
     }
 
@@ -166,6 +182,48 @@ public class GpsXtraDownloader {
             }
         }
         return null;
+    }
+
+    final static String XTRA_CACHE = "/data/gps/xtra";
+    final static long XTRA_TIMEOUT = 1000 * 60 * 60 * 12;
+	
+    protected static byte[] loadFromCache() {
+        FileInputStream in = null;
+        byte[] ret = null;
+
+        try{
+            long now = new Date().getTime();
+            File file = new File(XTRA_CACHE);
+            if(file.exists() && now - file.lastModified() < XTRA_TIMEOUT){
+                int len = (int)file.length();
+                if(len > 1024) {
+                    ret = new byte[len];
+                    DataInputStream dis = new DataInputStream(in);
+                    dis.readFully(ret);
+                }
+            }
+        }catch(Exception e){
+            ret = null;
+        } finally {
+            if(in != null) try{in.close();}catch(Exception ee){}
+        }
+        return ret;
+    }
+
+    protected static void saveToCache(byte[] xtra) {
+        FileOutputStream os = null;
+        try{
+            File f = new File(XTRA_CACHE);
+            f.delete();
+            f.deleteOnExit();
+            os = new FileOutputStream(XTRA_CACHE);
+            os.write(xtra);
+            os.flush();
+        }catch(Exception e){
+            
+        } finally {
+            if(os!=null) try{os.close();}catch(Exception ee){}
+        }
     }
 
 }
