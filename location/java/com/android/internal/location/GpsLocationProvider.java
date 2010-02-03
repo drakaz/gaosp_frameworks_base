@@ -880,6 +880,7 @@ public class GpsLocationProvider extends ILocationProvider.Stub {
 
         synchronized(mListeners) {
             boolean wasNavigating = mNavigating;
+<<<<<<< HEAD
             mNavigating = (status == GPS_STATUS_ENGINE_ON);
     
             if (wasNavigating == mNavigating) {
@@ -887,47 +888,54 @@ public class GpsLocationProvider extends ILocationProvider.Stub {
             }
             
             if (mNavigating) {
+=======
+            mNavigating = (status == GPS_STATUS_SESSION_BEGIN);
+
+            if (mNavigating && !mWakeLock.isHeld()) {
+>>>>>>> 6ff3f8add87358b8489fa3f1705cf3bbfa34bc38
                 if (DEBUG) Log.d(TAG, "Acquiring wakelock");
                  mWakeLock.acquire();
             }
-        
-            int size = mListeners.size();
-            for (int i = 0; i < size; i++) {
-                Listener listener = mListeners.get(i);
+
+            if (wasNavigating != mNavigating) {
+                int size = mListeners.size();
+                for (int i = 0; i < size; i++) {
+                    Listener listener = mListeners.get(i);
+                    try {
+                        if (mNavigating) {
+                            listener.mListener.onGpsStarted();
+                        } else {
+                            listener.mListener.onGpsStopped();
+                        }
+                    } catch (RemoteException e) {
+                        Log.w(TAG, "RemoteException in reportStatus");
+                        mListeners.remove(listener);
+                        // adjust for size of list changing
+                        size--;
+                    }
+                }
+
                 try {
-                    if (mNavigating) {
-                        listener.mListener.onGpsStarted(); 
-                    } else {
-                        listener.mListener.onGpsStopped(); 
+                    // update battery stats
+                    for (int i=mClientUids.size() - 1; i >= 0; i--) {
+                        int uid = mClientUids.keyAt(i);
+                        if (mNavigating) {
+                            mBatteryStats.noteStartGps(uid);
+                        } else {
+                            mBatteryStats.noteStopGps(uid);
+                        }
                     }
                 } catch (RemoteException e) {
                     Log.w(TAG, "RemoteException in reportStatus");
-                    mListeners.remove(listener);
-                    // adjust for size of list changing
-                    size--;
                 }
+
+                // send an intent to notify that the GPS has been enabled or disabled.
+                Intent intent = new Intent(GPS_ENABLED_CHANGE_ACTION);
+                intent.putExtra(EXTRA_ENABLED, mNavigating);
+                mContext.sendBroadcast(intent);
             }
 
-            try {
-                // update battery stats
-                for (int i=mClientUids.size() - 1; i >= 0; i--) {
-                    int uid = mClientUids.keyAt(i);
-                    if (mNavigating) {
-                        mBatteryStats.noteStartGps(uid);
-                    } else {
-                        mBatteryStats.noteStopGps(uid);
-                    }
-                }
-            } catch (RemoteException e) {
-                Log.w(TAG, "RemoteException in reportStatus");
-            }
-
-            // send an intent to notify that the GPS has been enabled or disabled.
-            Intent intent = new Intent(GPS_ENABLED_CHANGE_ACTION);
-            intent.putExtra(EXTRA_ENABLED, mNavigating);
-            mContext.sendBroadcast(intent);
-
-            if (!mNavigating) {
+            if (status == GPS_STATUS_ENGINE_OFF && mWakeLock.isHeld()) {
                 if (DEBUG) Log.d(TAG, "Releasing wakelock");
                 mWakeLock.release();
             }

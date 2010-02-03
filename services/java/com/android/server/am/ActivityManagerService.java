@@ -185,6 +185,7 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
     static final int LOG_AM_SERVICE_CRASHED_TOO_MUCH = 30034;
     static final int LOG_AM_SCHEDULE_SERVICE_RESTART = 30035;
     static final int LOG_AM_PROVIDER_LOST_PROCESS = 30036;
+    static final int LOG_AM_PROCESS_START_TIMEOUT = 30037;
     
     static final int LOG_BOOT_PROGRESS_AMS_READY = 3040;
     static final int LOG_BOOT_PROGRESS_ENABLE_SCREEN = 3050;
@@ -408,6 +409,13 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
      */
     final ArrayList<BroadcastRecord> mOrderedBroadcasts
             = new ArrayList<BroadcastRecord>();
+
+    /**
+     * Historical data of past broadcasts, for debugging.
+     */
+    static final int MAX_BROADCAST_HISTORY = 100;
+    final BroadcastRecord[] mBroadcastHistory
+            = new BroadcastRecord[MAX_BROADCAST_HISTORY];
 
     /**
      * Set when we current have a BROADCAST_INTENT_MSG in flight.
@@ -5192,13 +5200,23 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
         
         if (gone) {
             Log.w(TAG, "Process " + app + " failed to attach");
+            EventLog.writeEvent(LOG_AM_PROCESS_START_TIMEOUT, pid, app.info.uid,
+                    app.processName);
             mProcessNames.remove(app.processName, app.info.uid);
-            Process.killProcess(pid);
-            if (mPendingBroadcast != null && mPendingBroadcast.curApp.pid == pid) {
-                Log.w(TAG, "Unattached app died before broadcast acknowledged, skipping");
-                mPendingBroadcast = null;
-                scheduleBroadcastsLocked();
+            // Take care of any launching providers waiting for this process.
+            checkAppInLaunchingProvidersLocked(app, true);
+            // Take care of any services that are waiting for the process.
+            for (int i=0; i<mPendingServices.size(); i++) {
+                ServiceRecord sr = mPendingServices.get(i);
+                if (app.info.uid == sr.appInfo.uid
+                        && app.processName.equals(sr.processName)) {
+                    Log.w(TAG, "Forcing bringing down service: " + sr);
+                    mPendingServices.remove(i);
+                    i--;
+                    bringDownServiceLocked(sr, true);
+                }
             }
+            Process.killProcess(pid);
             if (mBackupTarget != null && mBackupTarget.app.pid == pid) {
                 Log.w(TAG, "Unattached app died before backup, skipping");
                 try {
@@ -5208,6 +5226,11 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
                 } catch (RemoteException e) {
                     // Can't happen; the backup manager is local
                 }
+            }
+            if (mPendingBroadcast != null && mPendingBroadcast.curApp.pid == pid) {
+                Log.w(TAG, "Unattached app died before broadcast acknowledged, skipping");
+                mPendingBroadcast = null;
+                scheduleBroadcastsLocked();
             }
         } else {
             Log.w(TAG, "Spurious process start timeout - pid not known for " + app);
@@ -9393,6 +9416,17 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
             }
 
             pw.println(" ");
+            pw.println("  Historical broadcasts:");
+            for (int i=0; i<MAX_BROADCAST_HISTORY; i++) {
+                BroadcastRecord r = mBroadcastHistory[i];
+                if (r == null) {
+                    break;
+                }
+                pw.println("  Historical Broadcast #" + i + ":");
+                r.dump(pw, "    ");
+            }
+            
+            pw.println(" ");
             pw.println("  mBroadcastsScheduled=" + mBroadcastsScheduled);
             if (mStickyBroadcasts != null) {
                 pw.println(" ");
@@ -9932,23 +9966,11 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
             app.pubProviders.clear();
         }
         
-        // Look through the content providers we are waiting to have launched,
-        // and if any run in this process then either schedule a restart of
-        // the process or kill the client waiting for it if this process has
-        // gone bad.
-        for (int i=0; i<NL; i++) {
-            ContentProviderRecord cpr = (ContentProviderRecord)
-                    mLaunchingProviders.get(i);
-            if (cpr.launchingApp == app) {
-                if (!app.bad) {
-                    restart = true;
-                } else {
-                    removeDyingProviderLocked(app, cpr);
-                    NL = mLaunchingProviders.size();
-                }
-            }
+        // Take care of any launching providers waiting for this process.
+        if (checkAppInLaunchingProvidersLocked(app, false)) {
+            restart = true;
         }
-
+        
         // Unregister from connected content providers.
         if (!app.conProviders.isEmpty()) {
             Iterator it = app.conProviders.keySet().iterator();
@@ -10043,6 +10065,28 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
         }
     }
 
+    boolean checkAppInLaunchingProvidersLocked(ProcessRecord app, boolean alwaysBad) {
+        // Look through the content providers we are waiting to have launched,
+        // and if any run in this process then either schedule a restart of
+        // the process or kill the client waiting for it if this process has
+        // gone bad.
+        int NL = mLaunchingProviders.size();
+        boolean restart = false;
+        for (int i=0; i<NL; i++) {
+            ContentProviderRecord cpr = (ContentProviderRecord)
+                    mLaunchingProviders.get(i);
+            if (cpr.launchingApp == app) {
+                if (!alwaysBad && !app.bad) {
+                    restart = true;
+                } else {
+                    removeDyingProviderLocked(app, cpr);
+                    NL = mLaunchingProviders.size();
+                }
+            }
+        }
+        return restart;
+    }
+    
     // =========================================================
     // SERVICES
     // =========================================================
@@ -11611,7 +11655,7 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
                     Intent intent = (Intent)allSticky.get(i);
                     BroadcastRecord r = new BroadcastRecord(intent, null,
                             null, -1, -1, null, receivers, null, 0, null, null,
-                            false, true);
+                            false, true, true);
                     if (mParallelBroadcasts.size() == 0) {
                         scheduleBroadcastsLocked();
                     }
@@ -11836,7 +11880,7 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
             BroadcastRecord r = new BroadcastRecord(intent, callerApp,
                     callerPackage, callingPid, callingUid, requiredPermission,
                     registeredReceivers, resultTo, resultCode, resultData, map,
-                    ordered, false);
+                    ordered, sticky, false);
             if (DEBUG_BROADCAST) Log.v(
                     TAG, "Enqueueing parallel broadcast " + r
                     + ": prev had " + mParallelBroadcasts.size());
@@ -11915,7 +11959,8 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
                 || resultTo != null) {
             BroadcastRecord r = new BroadcastRecord(intent, callerApp,
                     callerPackage, callingPid, callingUid, requiredPermission,
-                    receivers, resultTo, resultCode, resultData, map, ordered, false);
+                    receivers, resultTo, resultCode, resultData, map, ordered,
+                    sticky, false);
             if (DEBUG_BROADCAST) Log.v(
                     TAG, "Enqueueing ordered broadcast " + r
                     + ": prev had " + mOrderedBroadcasts.size());
@@ -12133,17 +12178,17 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
             }
             long now = SystemClock.uptimeMillis();
             BroadcastRecord r = mOrderedBroadcasts.get(0);
-            if ((r.startTime+BROADCAST_TIMEOUT) > now) {
+            if ((r.receiverTime+BROADCAST_TIMEOUT) > now) {
                 if (DEBUG_BROADCAST) Log.v(TAG,
                         "Premature timeout @ " + now + ": resetting BROADCAST_TIMEOUT_MSG for "
-                        + (r.startTime + BROADCAST_TIMEOUT));
+                        + (r.receiverTime + BROADCAST_TIMEOUT));
                 Message msg = mHandler.obtainMessage(BROADCAST_TIMEOUT_MSG);
-                mHandler.sendMessageAtTime(msg, r.startTime+BROADCAST_TIMEOUT);
+                mHandler.sendMessageAtTime(msg, r.receiverTime+BROADCAST_TIMEOUT);
                 return;
             }
 
             Log.w(TAG, "Timeout of broadcast " + r + " - receiver=" + r.receiver);
-            r.startTime = now;
+            r.receiverTime = now;
             r.anrCount++;
 
             // Current receiver has passed its expiration date.
@@ -12291,7 +12336,7 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
                 }
                 performReceive(filter.receiverList.app, filter.receiverList.receiver,
                     new Intent(r.intent), r.resultCode,
-                    r.resultData, r.resultExtras, r.ordered, r.sticky);
+                    r.resultData, r.resultExtras, r.ordered, r.initialSticky);
                 if (ordered) {
                     r.state = BroadcastRecord.CALL_DONE_RECEIVE;
                 }
@@ -12309,6 +12354,17 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
         }
     }
 
+    private final void addBroadcastToHistoryLocked(BroadcastRecord r) {
+        if (r.callingUid < 0) {
+            // This was from a registerReceiver() call; ignore it.
+            return;
+        }
+        System.arraycopy(mBroadcastHistory, 0, mBroadcastHistory, 1,
+                MAX_BROADCAST_HISTORY-1);
+        r.finishTime = SystemClock.uptimeMillis();
+        mBroadcastHistory[0] = r;
+    }
+    
     private final void processNextBroadcast(boolean fromMsg) {
         synchronized(this) {
             BroadcastRecord r;
@@ -12326,6 +12382,7 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
             // First, deliver any non-serialized broadcasts right away.
             while (mParallelBroadcasts.size() > 0) {
                 r = mParallelBroadcasts.remove(0);
+                r.dispatchTime = SystemClock.uptimeMillis();
                 final int N = r.receivers.size();
                 if (DEBUG_BROADCAST_LIGHT) Log.v(TAG, "Processing parallel broadcast "
                         + r);
@@ -12336,6 +12393,7 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
                             + target + ": " + r);
                     deliverToRegisteredReceiver(r, (BroadcastFilter)target, false);
                 }
+                addBroadcastToHistoryLocked(r);
                 if (DEBUG_BROADCAST_LIGHT) Log.v(TAG, "Done with parallel broadcast "
                         + r);
             }
@@ -12393,7 +12451,7 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
                         Log.w(TAG, "Hung broadcast discarded after timeout failure:"
                                 + " now=" + now
                                 + " dispatchTime=" + r.dispatchTime
-                                + " startTime=" + r.startTime
+                                + " startTime=" + r.receiverTime
                                 + " intent=" + r.intent
                                 + " numReceivers=" + numReceivers
                                 + " nextReceiver=" + r.nextReceiver
@@ -12437,6 +12495,7 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
                             + r);
                     
                     // ... and on to the next...
+                    addBroadcastToHistoryLocked(r);
                     mOrderedBroadcasts.remove(0);
                     r = null;
                     looped = true;
@@ -12449,17 +12508,17 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
 
             // Keep track of when this receiver started, and make sure there
             // is a timeout message pending to kill it if need be.
-            r.startTime = SystemClock.uptimeMillis();
+            r.receiverTime = SystemClock.uptimeMillis();
             if (recIdx == 0) {
-                r.dispatchTime = r.startTime;
+                r.dispatchTime = r.receiverTime;
 
                 if (DEBUG_BROADCAST_LIGHT) Log.v(TAG, "Processing ordered broadcast "
                         + r);
                 if (DEBUG_BROADCAST) Log.v(TAG,
                         "Submitting BROADCAST_TIMEOUT_MSG for "
-                        + (r.startTime + BROADCAST_TIMEOUT));
+                        + (r.receiverTime + BROADCAST_TIMEOUT));
                 Message msg = mHandler.obtainMessage(BROADCAST_TIMEOUT_MSG);
-                mHandler.sendMessageAtTime(msg, r.startTime+BROADCAST_TIMEOUT);
+                mHandler.sendMessageAtTime(msg, r.receiverTime+BROADCAST_TIMEOUT);
             }
 
             Object nextReceiver = r.receivers.get(recIdx);
@@ -12784,6 +12843,11 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
 
                 mConfiguration = newConfig;
                 Log.i(TAG, "Config changed: " + newConfig);
+                
+                AttributeCache ac = AttributeCache.instance();
+                if (ac != null) {
+                    ac.updateConfiguration(mConfiguration);
+                }
 
                 Message msg = mHandler.obtainMessage(UPDATE_CONFIGURATION_MSG);
                 msg.obj = new Configuration(mConfiguration);
@@ -12802,12 +12866,14 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
                     }
                 }
                 Intent intent = new Intent(Intent.ACTION_CONFIGURATION_CHANGED);
+                intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY);
                 broadcastIntentLocked(null, null, intent, null, null, 0, null, null,
                         null, false, false, MY_PID, Process.SYSTEM_UID);
-                
-                AttributeCache ac = AttributeCache.instance();
-                if (ac != null) {
-                    ac.updateConfiguration(mConfiguration);
+                if ((changes&ActivityInfo.CONFIG_LOCALE) != 0) {
+                    broadcastIntentLocked(null, null,
+                            new Intent(Intent.ACTION_LOCALE_CHANGED),
+                            null, null, 0, null, null,
+                            null, false, false, MY_PID, Process.SYSTEM_UID);
                 }
             }
         }
@@ -12854,7 +12920,7 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
         try {
             if (DEBUG_SWITCH) Log.i(TAG, "Switch is restarting resumed " + r);
             r.app.thread.scheduleRelaunchActivity(r, results, newIntents,
-                    changes, !andResume);
+                    changes, !andResume, mConfiguration);
             // Note: don't need to call pauseIfSleepingLocked() here, because
             // the caller will only pass in 'andResume' if this activity is
             // currently resumed, which implies we aren't sleeping.
