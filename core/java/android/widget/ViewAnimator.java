@@ -138,15 +138,14 @@ public class ViewAnimator extends FrameLayout {
         final int count = getChildCount();
         for (int i = 0; i < count; i++) {
             final View child = getChildAt(i);
-            final boolean checkForFirst = (!mFirstTime || mAnimateFirstTime);
             if (i == childIndex) {
-                if (checkForFirst && mInAnimation != null) {
+                if ((!mFirstTime || mAnimateFirstTime) && mInAnimation != null) {
                     child.startAnimation(mInAnimation);
                 }
                 child.setVisibility(View.VISIBLE);
                 mFirstTime = false;
             } else {
-                if (checkForFirst && mOutAnimation != null && child.getVisibility() == View.VISIBLE) {
+                if (mOutAnimation != null && child.getVisibility() == View.VISIBLE) {
                     child.startAnimation(mOutAnimation);
                 } else if (child.getAnimation() == mInAnimation)
                     child.clearAnimation();

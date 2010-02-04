@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-// modified by musty for I7500
-
 package com.android.server;
 
 import com.android.internal.app.IBatteryStats;
@@ -2519,27 +2517,18 @@ class PowerManagerService extends IPowerManager.Stub
     }
 
     SensorEventListener mProximityListener = new SensorEventListener() {
-       public void onSensorChanged(SensorEvent event) {
+        public void onSensorChanged(SensorEvent event) {
             long milliseconds = SystemClock.elapsedRealtime();
             synchronized (mLocks) {
                 float distance = event.values[0];
-		//musty : Galaxy only sends 0 and 1
-		int iDistance = (int)distance;
-		if(iDistance != 0 && iDistance != 1)
-			return;
-
                 long timeSinceLastEvent = milliseconds - mLastProximityEventTime;
                 mLastProximityEventTime = milliseconds;
                 mHandler.removeCallbacks(mProximityTask);
                 boolean proximityTaskQueued = false;
 
-
-		boolean active = (iDistance == 1);
-		/*
                 // compare against getMaximumRange to support sensors that only return 0 or 1
                 boolean active = (distance >= 0.0 && distance < PROXIMITY_THRESHOLD &&
                         distance < mProximitySensor.getMaximumRange());
-		*/
 
                 if (mDebugProximitySensor) {
                     Log.d(TAG, "mProximityListener.onSensorChanged active: " + active);

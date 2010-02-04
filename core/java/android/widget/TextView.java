@@ -5202,7 +5202,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             mDesiredHeightAtMeasure = desired;
 
             if (heightMode == MeasureSpec.AT_MOST) {
-                height = Math.min(desired, heightSize);
+                height = Math.min(desired, height);
             }
         }
 

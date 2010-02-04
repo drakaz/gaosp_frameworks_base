@@ -4140,7 +4140,7 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
      * @param resultCode Result code, if any, from this Activity.
      * @param resultData Result data (Intent), if any, from this Activity.
      * 
-     * @return Returns true if the activity successfully finished, or false if it is still running.
+     * @result Returns true if the activity successfully finished, or false if it is still running.
      */
     public final boolean finishActivity(IBinder token, int resultCode, Intent resultData) {
         // Refuse possible leaked file descriptors
@@ -6073,7 +6073,6 @@ public final class ActivityManagerService extends ActivityManagerNative implemen
         }
         // If the target requires a specific UID, always fail for others.
         if (reqUid >= 0 && uid != reqUid) {
-            Log.w(TAG, "Permission denied: checkComponentPermission() reqUid=" + reqUid);
             return PackageManager.PERMISSION_DENIED;
         }
         if (permission == null) {

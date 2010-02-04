@@ -177,8 +177,6 @@ public class ProgressBar extends View {
         Drawable drawable = a.getDrawable(R.styleable.ProgressBar_progressDrawable);
         if (drawable != null) {
             drawable = tileify(drawable, false);
-            // Calling this method can set mMaxHeight, make sure the corresponding
-            // XML attribute for mMaxHeight is read after calling this method
             setProgressDrawable(drawable);
         }
 
@@ -423,13 +421,6 @@ public class ProgressBar extends View {
     public void setProgressDrawable(Drawable d) {
         if (d != null) {
             d.setCallback(this);
-
-            // Make sure the ProgressBar is always tall enough
-            int drawableHeight = d.getMinimumHeight();
-            if (mMaxHeight < drawableHeight) {
-                mMaxHeight = drawableHeight;
-                requestLayout();
-            }
         }
         mProgressDrawable = d;
         if (!mIndeterminate) {

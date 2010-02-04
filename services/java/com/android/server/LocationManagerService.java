@@ -1204,10 +1204,12 @@ public class LocationManagerService extends ILocationManager.Stub implements Run
             // Remove expired alerts
             if (intentsToRemove != null) {
                 for (PendingIntent i : intentsToRemove) {
-                    ProximityAlert alert = mProximityAlerts.remove(i);
+                    mProximityAlerts.remove(i);
+                    ProximityAlert alert = mProximityAlerts.get(i);
                     mProximitiesEntered.remove(alert);
                 }
             }
+
         }
 
         // Note: this is called with the lock held.
@@ -1313,7 +1315,7 @@ public class LocationManagerService extends ILocationManager.Stub implements Run
 
     /**
      * @return null if the provider does not exits
-     * @throws SecurityException if the provider is not allowed to be
+     * @throw SecurityException if the provider is not allowed to be
      * accessed by the caller
      */
     public Bundle getProviderInfo(String provider) {

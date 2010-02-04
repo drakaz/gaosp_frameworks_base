@@ -1642,11 +1642,10 @@ org.apache.harmony.lang.annotation.AnnotationMember
 org.apache.harmony.lang.annotation.AnnotationMember$DefaultValues
 org.apache.harmony.luni.internal.net.www.protocol.http.HttpConfiguration
 org.apache.harmony.luni.internal.net.www.protocol.http.HttpConnection
+org.apache.harmony.luni.internal.net.www.protocol.http.HttpURLConnection
+org.apache.harmony.luni.internal.net.www.protocol.http.HttpURLConnection$LimitedInputStream
 org.apache.harmony.luni.internal.net.www.protocol.jar.Handler
-<<<<<<< HEAD
-=======
 org.apache.harmony.luni.internal.net.www.protocol.jar.JarURLConnection
->>>>>>> 6ff3f8add87358b8489fa3f1705cf3bbfa34bc38
 org.apache.harmony.luni.internal.util.TimezoneGetter
 org.apache.harmony.luni.internal.util.ZoneInfo
 org.apache.harmony.luni.internal.util.ZoneInfoDB
