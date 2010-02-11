@@ -57,7 +57,7 @@ public final class BatteryStatsImpl extends BatteryStats {
     private static final int MAGIC = 0xBA757475; // 'BATSTATS' 
 
     // Current on-disk Parcel version
-    private static final int VERSION = 42;
+    private static final int VERSION = 41;
 
     private static int sNumSpeedSteps;
 
@@ -964,7 +964,8 @@ public final class BatteryStatsImpl extends BatteryStats {
      */
     private long getCurrentRadioDataUptime() {
         try {
-            File awakeTimeFile = new File("/sys/devices/virtual/net/rmnet0/awake_time_ms");
+	    // drakaz : replace rmnet0 for pdp0
+            File awakeTimeFile = new File("/sys/devices/virtual/net/pdp0/awake_time_ms");
             if (!awakeTimeFile.exists()) return 0;
             BufferedReader br = new BufferedReader(new FileReader(awakeTimeFile));
             String line = br.readLine();
