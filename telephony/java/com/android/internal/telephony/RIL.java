@@ -1479,6 +1479,12 @@ public final class RIL extends BaseCommands implements CommandsInterface {
                 = RILRequest.obtain(RIL_REQUEST_SET_NETWORK_SELECTION_AUTOMATIC,
                                     response);
 
+// drakaz : deactivate data call before setting automatic mode
+    Message DeactivateDataCallMessage = null;
+    for(int DeactivateDataCallCid = 0; DeactivateDataCallCid < 5; DeactivateDataCallCid++) {
+   	deactivateDataCall(DeactivateDataCallCid,DeactivateDataCallMessage);
+    }
+
         if (RILJ_LOGD) riljLog(rr.serialString() + "> " + requestToString(rr.mRequest));
 
         send(rr);
@@ -1490,7 +1496,7 @@ public final class RIL extends BaseCommands implements CommandsInterface {
                 = RILRequest.obtain(RIL_REQUEST_SET_NETWORK_SELECTION_MANUAL,
                                     response);
 
-// drakaz : deactivate data call before set manual mode
+// drakaz : deactivate data call before setting manual mode
     Message DeactivateDataCallMessage = null;
     for(int DeactivateDataCallCid = 0; DeactivateDataCallCid < 5; DeactivateDataCallCid++) {
    	deactivateDataCall(DeactivateDataCallCid,DeactivateDataCallMessage);
