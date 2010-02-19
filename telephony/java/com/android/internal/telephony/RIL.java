@@ -1479,6 +1479,12 @@ public final class RIL extends BaseCommands implements CommandsInterface {
                 = RILRequest.obtain(RIL_REQUEST_SET_NETWORK_SELECTION_AUTOMATIC,
                                     response);
 
+// drakaz : deactivate data call before setting automatic mode
+    Message DeactivateDataCallMessage = null;
+    for(int DeactivateDataCallCid = 0; DeactivateDataCallCid < 5; DeactivateDataCallCid++) {
+   	deactivateDataCall(DeactivateDataCallCid,DeactivateDataCallMessage);
+    }
+
         if (RILJ_LOGD) riljLog(rr.serialString() + "> " + requestToString(rr.mRequest));
 
         send(rr);
@@ -1490,8 +1496,14 @@ public final class RIL extends BaseCommands implements CommandsInterface {
                 = RILRequest.obtain(RIL_REQUEST_SET_NETWORK_SELECTION_MANUAL,
                                     response);
 
+// drakaz : deactivate data call before setting manual mode
+    Message DeactivateDataCallMessage = null;
+    for(int DeactivateDataCallCid = 0; DeactivateDataCallCid < 5; DeactivateDataCallCid++) {
+   	deactivateDataCall(DeactivateDataCallCid,DeactivateDataCallMessage);
+    }
+
         if (RILJ_LOGD) riljLog(rr.serialString() + "> " + requestToString(rr.mRequest)
-                    + " " + operatorNumeric);
+                    + " " + operatorNumeric + " " + "0");
 
         rr.mp.writeString(operatorNumeric);
 
@@ -1511,6 +1523,13 @@ public final class RIL extends BaseCommands implements CommandsInterface {
 
     public void
     getAvailableNetworks(Message response) {
+
+// drakaz : deactivate data call before scanning for network (consider 25 cid)
+    Message DeactivateDataCallMessage = null;
+    for(int DeactivateDataCallCid = 0; DeactivateDataCallCid < 5; DeactivateDataCallCid++) {
+   	deactivateDataCall(DeactivateDataCallCid,DeactivateDataCallMessage);
+    }
+ 
         RILRequest rr
                 = RILRequest.obtain(RIL_REQUEST_QUERY_AVAILABLE_NETWORKS,
                                     response);
@@ -2863,21 +2882,23 @@ public final class RIL extends BaseCommands implements CommandsInterface {
         String strings[] = (String [])responseStrings(p);
         ArrayList<NetworkInfo> ret;
 
-        if (strings.length % 4 != 0) {
+// drakaz : scanning radio network patch
+        if (strings.length % 5 != 0) {
             throw new RuntimeException(
                 "RIL_REQUEST_QUERY_AVAILABLE_NETWORKS: invalid response. Got "
-                + strings.length + " strings, expected multible of 4");
+                + strings.length + " strings, expected multible of 5");
         }
 
-        ret = new ArrayList<NetworkInfo>(strings.length / 4);
+        ret = new ArrayList<NetworkInfo>(strings.length / 5);
 
-        for (int i = 0 ; i < strings.length ; i += 4) {
+        for (int i = 0 ; i < strings.length ; i += 5) {
             ret.add (
                 new NetworkInfo(
                     strings[i+0],
                     strings[i+1],
                     strings[i+2],
-                    strings[i+3]));
+		    strings[i+3],
+                    strings[i+4]));
         }
 
         return ret;

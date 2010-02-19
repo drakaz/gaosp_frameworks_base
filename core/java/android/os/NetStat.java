@@ -149,7 +149,8 @@ public class NetStat {
         // to the previous charset conversion that happened before we
         // were reusing File instances.
         File[] files = new File[2];
-        files[0] = new File("/sys/class/net/rmnet0/statistics/" + whatStat);
+        // musty & buch85 patch for data status icon
+	files[0] = new File("/sys/class/net/pdp0/statistics/" + whatStat);
         files[1] = new File("/sys/class/net/ppp0/statistics/" + whatStat);
         return files;
     }

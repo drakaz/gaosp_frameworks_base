@@ -20,6 +20,7 @@
 #include "utils/Log.h"
 
 #include <hardware/sensors.h>
+#include "cutils/properties.h"
 
 #include "jni.h"
 #include "JNIHelp.h"
@@ -52,6 +53,7 @@ static struct bundle_descriptor_offsets_t
  */
 
 static sensors_control_device_t* sSensorDevice = 0;
+static sensors_control_device15_t* sSensorDevice15 = 0;
 
 static jint
 android_init(JNIEnv *env, jclass clazz)
@@ -59,6 +61,7 @@ android_init(JNIEnv *env, jclass clazz)
     sensors_module_t* module;
     if (hw_get_module(SENSORS_HARDWARE_MODULE_ID, (const hw_module_t**)&module) == 0) {
         if (sensors_control_open(&module->common, &sSensorDevice) == 0) {
+	    sSensorDevice15 = (sensors_control_device15_t*)sSensorDevice;	
             const struct sensor_t* list;
             int count = module->get_sensors_list(module, &list);
             return count;
@@ -70,10 +73,12 @@ android_init(JNIEnv *env, jclass clazz)
 static jobject
 android_open(JNIEnv *env, jclass clazz)
 {
-    native_handle_t* handle = sSensorDevice->open_data_source(sSensorDevice);
-    if (!handle) {
-        return NULL;
-    }
+    int fd = sSensorDevice15->open_data_source(sSensorDevice15);
+    if(fd < 0)
+	return NULL;
+
+    native_handle_t* handle = native_handle_create(1, 0);
+    handle->data[0] = fd;
 
     // new Bundle()
     jobject bundle = env->NewObject(
@@ -113,30 +118,52 @@ android_open(JNIEnv *env, jclass clazz)
 
 static jint
 android_close(JNIEnv *env, jclass clazz)
-{
+{/*
     if (sSensorDevice->close_data_source)
         return sSensorDevice->close_data_source(sSensorDevice);
     else
         return 0;
+*/
+//Cupcake doesnt have close_data_source
+	return 0;
 }
+
+static int active_sensors = 0;
 
 static jboolean
 android_activate(JNIEnv *env, jclass clazz, jint sensor, jboolean activate)
 {
-    int active = sSensorDevice->activate(sSensorDevice, sensor, activate);
+    int mask = 1 << sensor;
+    int prev_sens = active_sensors;	
+    if(activate)
+	active_sensors |= mask;
+    else
+	active_sensors &= ~mask;
+    if(active_sensors){
+	property_set("ctl.start", "akmd2");
+	usleep(500000);
+    } 	
+    int active = sSensorDevice15->activate(sSensorDevice15, sensor, activate);
+    	
+    if(active < 0) 
+	active_sensors = prev_sens;
+    
+    if(active_sensors == 0)
+	property_set("ctl.stop", "akmd2");
+
     return (active<0) ? false : true;
 }
 
 static jint
 android_set_delay(JNIEnv *env, jclass clazz, jint ms)
 {
-    return sSensorDevice->set_delay(sSensorDevice, ms);
+    return sSensorDevice15->set_delay(sSensorDevice15, ms);
 }
 
 static jint
 android_data_wake(JNIEnv *env, jclass clazz)
 {
-    int res = sSensorDevice->wake(sSensorDevice);
+    int res = sSensorDevice15->wake(sSensorDevice15);
     return res;
 }
 
@@ -176,3 +203,4 @@ int register_android_server_SensorService(JNIEnv *env)
 }
 
 }; // namespace android
+

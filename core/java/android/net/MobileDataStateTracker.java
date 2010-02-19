@@ -73,9 +73,10 @@ public class MobileDataStateTracker extends NetworkStateTracker {
             mEnabled = false;
         }
 
+	// drakaz : replace rmnet0 for pdp0
         mDnsPropNames = new String[] {
-                "net.rmnet0.dns1",
-                "net.rmnet0.dns2",
+                "net.pdp0.dns1",
+                "net.pdp0.dns2",
                 "net.eth0.dns1",
                 "net.eth0.dns2",
                 "net.eth0.dns3",
