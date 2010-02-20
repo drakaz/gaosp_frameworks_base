@@ -815,6 +815,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         SystemProperties.get("ro.com.android.dataroaming",
                                 "false")) ? 1 : 0);
 
+
+	// drakaz : provisionned the device
+        loadSetting(stmt, "device_provisioned",1);
+
         loadBooleanSetting(stmt, Settings.Secure.INSTALL_NON_MARKET_APPS,
                 R.bool.def_install_non_market_apps);
 
