@@ -38,7 +38,8 @@
             android:textAppearance="?android:attr/textAppearanceLarge"
         />
 
-        <!-- Carrier info -->
+	<!-- Carrier info -->
+<!-- drakaz : hide useless carrier info to keep space for emergency button
         <TextView android:id="@+id/carrier"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
@@ -48,11 +49,12 @@
             android:ellipsize="marquee"
             android:textAppearance="?android:attr/textAppearanceMedium"
         />
-
+-->
+<!-- change marging (18 -> 9) after removing carrier info -->
         <RelativeLayout
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="18dip"
+            android:layout_marginTop="9dip"
             android:layout_marginRight="6dip"
             android:layout_marginLeft="6dip"
             android:background="@android:drawable/edit_text"
