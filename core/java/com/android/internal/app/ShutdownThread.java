@@ -39,6 +39,7 @@ import android.util.Log;
 import android.view.WindowManager;
 import java.io.IOException;
 
+
 public final class ShutdownThread extends Thread {
     // constants
     private static final String TAG = "ShutdownThread";
@@ -54,6 +55,9 @@ public final class ShutdownThread extends Thread {
 
     // static instance of this thread
     private static final ShutdownThread sInstance = new ShutdownThread();
+
+    // drakaz : reboot recovery variable
+    private static boolean sIsRecovery = false;
     
     private final Object mBroadcastDoneSync = new Object();
     private boolean mBroadcastDone;
@@ -79,7 +83,10 @@ public final class ShutdownThread extends Thread {
      * @param context Context used to display the shutdown progress dialog.
      */
     public static void shutdown(final Context context, boolean confirm, final boolean reboot) {
-        // ensure that only one thread is trying to power down.
+	// drakaz : reboot recovery
+	int MessageReboot;        
+
+	// ensure that only one thread is trying to power down.
         // any additional calls are just returned
         synchronized (sIsStartedGuard){
             if (sIsStarted) {
@@ -90,11 +97,17 @@ public final class ShutdownThread extends Thread {
 
         Log.d(TAG, "Notifying thread to start radio shutdown");
 
+	if (sIsRecovery) {
+		MessageReboot = com.android.internal.R.string.reboot_recovery_confirm;
+	} else {
+		MessageReboot = (reboot ? com.android.internal.R.string.reboot_confirm : com.android.internal.R.string.shutdown_confirm);
+	}
+	
         if (confirm) {
             final AlertDialog dialog = new AlertDialog.Builder(context)
                     .setIcon(android.R.drawable.ic_dialog_alert)
                     .setTitle(reboot ? com.android.internal.R.string.reboot_system : com.android.internal.R.string.power_off)
-                    .setMessage(reboot ? com.android.internal.R.string.reboot_confirm : com.android.internal.R.string.shutdown_confirm)
+                    .setMessage(MessageReboot)
                     .setPositiveButton(com.android.internal.R.string.yes, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
                             beginShutdownSequence(context, reboot);
@@ -113,6 +126,12 @@ public final class ShutdownThread extends Thread {
         }
     }
 
+// drakaz : reboot recovery
+    public static void RebootRecovery(final Context context, boolean confirm, final boolean reboot) {
+       	sIsRecovery = true;
+       	shutdown(context, confirm, reboot);
+    }
+
     private static void beginShutdownSequence(Context context, boolean reboot) {
         synchronized (sIsStartedGuard) {
             sIsStarted = true;
@@ -123,7 +142,12 @@ public final class ShutdownThread extends Thread {
         // shutting down.
         ProgressDialog pd = new ProgressDialog(context);
         pd.setTitle(context.getText(reboot ? com.android.internal.R.string.reboot_system : com.android.internal.R.string.power_off));
-        pd.setMessage(context.getText(reboot ? com.android.internal.R.string.reboot_progress : com.android.internal.R.string.shutdown_progress));
+// drakaz : reboot recovery
+        if (sIsRecovery) {
+		pd.setMessage(context.getText(com.android.internal.R.string.reboot_progress_recovery));
+ 	} else {
+        	pd.setMessage(context.getText(reboot ? com.android.internal.R.string.reboot_progress : com.android.internal.R.string.shutdown_progress));
+	}
         pd.setIndeterminate(true);
         pd.setCancelable(false);
         pd.getWindow().setType(WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG);
@@ -272,7 +296,12 @@ public final class ShutdownThread extends Thread {
         if (sIsRebooting) {
             Log.i(TAG, "Rebooting system...");
             try {
-                Power.reboot(null);
+	// drakaz : reboot recovery
+		if (sIsRecovery) {
+			Power.RebootRecovery(null);
+		} else {
+                	Power.reboot(null);
+		}
             } catch (IOException e) {
                 Log.e(TAG, "Reboot failed: " + e.getMessage());
                 Power.shutdown();

@@ -113,5 +113,29 @@ public class Power
         rebootNative(reason);
     }
 
+     /**
+     * Drakaz : 
+     * Reboot the device in recovery mode (because of new native reboot function use init.rc service instead of system service : Power.reboot("recovery") don't work anymore.
+     * @param reason code to pass to the kernel (e.g. "recovery"), or null.
+     *
+     * @throws IOException if reboot fails for some reason (eg, lack of
+     *         permission)
+     */
+    public static void RebootRecovery(String reason) throws IOException
+    {
+        IMountService mSvc = IMountService.Stub.asInterface(
+                ServiceManager.getService("mount"));
+
+        if (mSvc != null) {
+            try {
+                mSvc.shutdown();
+            } catch (Exception e) {
+            }
+        }
+        RebootRecoveryNative(reason);
+    }
+
     private static native void rebootNative(String reason) throws IOException ;
+    // Drakaz : declare native function
+    private static native void RebootRecoveryNative(String reason) throws IOException ;
 }

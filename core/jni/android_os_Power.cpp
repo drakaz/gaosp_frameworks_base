@@ -92,6 +92,15 @@ static void android_os_Power_reboot(JNIEnv *env, jobject clazz, jstring reason)
 #endif
 }
 
+// drakaz : reboot recovery
+static void android_os_Power_RebootRecovery(JNIEnv *env, jobject clazz, jstring reason)
+{
+    sync();
+#ifdef HAVE_ANDROID_OS
+    property_set("ctl.start", "RebootRecovery");
+#endif
+}
+
 static JNINativeMethod method_table[] = {
     { "acquireWakeLock", "(ILjava/lang/String;)V", (void*)acquireWakeLock },
     { "releaseWakeLock", "(Ljava/lang/String;)V", (void*)releaseWakeLock },
@@ -99,6 +108,7 @@ static JNINativeMethod method_table[] = {
     { "setScreenState", "(Z)I", (void*)setScreenState },
     { "shutdown", "()V", (void*)android_os_Power_shutdown },
     { "rebootNative", "(Ljava/lang/String;)V", (void*)android_os_Power_reboot },
+    { "RebootRecoveryNative", "(Ljava/lang/String;)V", (void*)android_os_Power_RebootRecovery },
 };
 
 int register_android_os_Power(JNIEnv *env)
