@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2006 The Android Open Source Project
- * Copyright (C) 2010 Sony Ericsson Mobile Communications AB
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -587,6 +586,9 @@ public class WebView extends AbsoluteLayout
     public static final String SCHEME_GEO = "geo:0,0?q=";
 
     private int mBackgroundColor = Color.WHITE;
+    
+    //Wysie
+    private boolean showZoomControls = true;
 
     // Used to notify listeners of a new picture.
     private PictureListener mPictureListener;
@@ -766,6 +768,11 @@ public class WebView extends AbsoluteLayout
         }
         updateMultiTouchSupport(context);
     }
+    
+    //Wysie
+    void showZoomControls(boolean value) {
+        showZoomControls = value;
+    }
 
     void updateMultiTouchSupport(Context context) {
         WebSettings settings = getSettings();
@@ -781,6 +788,10 @@ public class WebView extends AbsoluteLayout
     }
 
     private void updateZoomButtonsEnabled() {
+        if (!showZoomControls) {
+            mZoomButtonsController.getZoomControls().setVisibility(View.GONE);
+        }
+        else {
         boolean canZoomIn = mActualScale < mMaxZoomScale;
         boolean canZoomOut = mActualScale > mMinZoomScale && !mInZoomOverview;
         if (!canZoomIn && !canZoomOut) {
@@ -795,6 +806,7 @@ public class WebView extends AbsoluteLayout
             // or out.
             mZoomButtonsController.setZoomInEnabled(canZoomIn);
             mZoomButtonsController.setZoomOutEnabled(canZoomOut);
+        }
         }
     }
 
@@ -2101,7 +2113,7 @@ public class WebView extends AbsoluteLayout
 
         int viewWidth = getViewWidth();
         int newWidth = Math.round(viewWidth * mInvActualScale);
-        int newHeight = mHeightCanMeasure ? 0 : Math.round(getViewHeight() * mInvActualScale);
+        int newHeight = Math.round(getViewHeight() * mInvActualScale);
         /*
          * Because the native side may have already done a layout before the
          * View system was able to measure us, we have to send a height of 0 to

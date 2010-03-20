@@ -157,6 +157,9 @@ public:
     // Supported color effect settings.
     // Example value: "none,mono,sepia". Read only.
     static const char KEY_SUPPORTED_EFFECTS[];
+    //Auto exposure settings.
+    static const char KEY_AUTO_EXPOSURE[];
+    static const char KEY_SUPPORTED_AUTO_EXPOSURE[];
     // Current antibanding setting.
     // Example value: "auto" or ANTIBANDING_XXX constants. Read/write.
     static const char KEY_ANTIBANDING[];
@@ -184,6 +187,12 @@ public:
     // Supported focus modes.
     // Example value: "auto,macro,fixed". Read only.
     static const char KEY_SUPPORTED_FOCUS_MODES[];
+    //ISO Values
+    static const char KEY_ISO_MODE[];
+    static const char KEY_SUPPORTED_ISO_MODES[];
+    //Lens Shading Values
+    static const char KEY_LENSSHADE[] ;
+    static const char KEY_SUPPORTED_LENSSHADE_MODES[] ;
 
         // Values for white balance settings.
     static const char WHITE_BALANCE_AUTO[];
@@ -205,6 +214,11 @@ public:
     static const char EFFECT_WHITEBOARD[];
     static const char EFFECT_BLACKBOARD[];
     static const char EFFECT_AQUA[];
+
+    // Values for auto exposure settings.
+    static const char AUTO_EXPOSURE_FRAME_AVG[];
+    static const char AUTO_EXPOSURE_CENTER_WEIGHTED[];
+    static const char AUTO_EXPOSURE_SPOT_METERING[];
 
     // Values for antibanding settings.
     static const char ANTIBANDING_AUTO[];
@@ -257,12 +271,25 @@ public:
     // Focus is set at infinity. Applications should not call
     // CameraHardwareInterface.autoFocus in this mode.
     static const char FOCUS_MODE_INFINITY[];
+    static const char FOCUS_MODE_NORMAL[];
     static const char FOCUS_MODE_MACRO[];
     // Focus is fixed. The camera is always in this mode if the focus is not
     // adjustable. If the camera has auto-focus, this mode can fix the
     // focus, which is usually at hyperfocal distance. Applications should
     // not call CameraHardwareInterface.autoFocus in this mode.
     static const char FOCUS_MODE_FIXED[];
+
+    // Values for ISO Settings
+    static const char ISO_AUTO[];
+    static const char ISO_HJR[] ;
+    static const char ISO_100[];
+    static const char ISO_200[] ;
+    static const char ISO_400[];
+    static const char ISO_800[];
+
+    // Values for Lens Shading
+    static const char LENSSHADE_ENABLE[] ;
+    static const char LENSSHADE_DISABLE[] ;
 
 private:
     DefaultKeyedVector<String8,String8>    mMap;

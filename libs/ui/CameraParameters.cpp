@@ -48,6 +48,8 @@ const char CameraParameters::KEY_WHITE_BALANCE[] = "whitebalance";
 const char CameraParameters::KEY_SUPPORTED_WHITE_BALANCE[] = "whitebalance-values";
 const char CameraParameters::KEY_EFFECT[] = "effect";
 const char CameraParameters::KEY_SUPPORTED_EFFECTS[] = "effect-values";
+const char CameraParameters::KEY_AUTO_EXPOSURE[] = "auto-exposure";
+const char CameraParameters::KEY_SUPPORTED_AUTO_EXPOSURE[] = "auto-exposure-values";
 const char CameraParameters::KEY_ANTIBANDING[] = "antibanding";
 const char CameraParameters::KEY_SUPPORTED_ANTIBANDING[] = "antibanding-values";
 const char CameraParameters::KEY_SCENE_MODE[] = "scene-mode";
@@ -56,6 +58,10 @@ const char CameraParameters::KEY_FLASH_MODE[] = "flash-mode";
 const char CameraParameters::KEY_SUPPORTED_FLASH_MODES[] = "flash-mode-values";
 const char CameraParameters::KEY_FOCUS_MODE[] = "focus-mode";
 const char CameraParameters::KEY_SUPPORTED_FOCUS_MODES[] = "focus-mode-values";
+const char CameraParameters::KEY_ISO_MODE[] = "iso";
+const char CameraParameters::KEY_SUPPORTED_ISO_MODES[] = "iso-values";
+const char CameraParameters::KEY_LENSSHADE[] = "lensshade";
+const char CameraParameters::KEY_SUPPORTED_LENSSHADE_MODES[] = "lensshade-values";
 
 // Values for white balance settings.
 const char CameraParameters::WHITE_BALANCE_AUTO[] = "auto";
@@ -77,6 +83,11 @@ const char CameraParameters::EFFECT_POSTERIZE[] = "posterize";
 const char CameraParameters::EFFECT_WHITEBOARD[] = "whiteboard";
 const char CameraParameters::EFFECT_BLACKBOARD[] = "blackboard";
 const char CameraParameters::EFFECT_AQUA[] = "aqua";
+
+// Values for auto exposure settings.
+const char CameraParameters::AUTO_EXPOSURE_FRAME_AVG[] = "frame-average";
+const char CameraParameters::AUTO_EXPOSURE_CENTER_WEIGHTED[] = "center-weighted";
+const char CameraParameters::AUTO_EXPOSURE_SPOT_METERING[] = "spot-metering";
 
 // Values for antibanding settings.
 const char CameraParameters::ANTIBANDING_AUTO[] = "auto";
@@ -118,8 +129,23 @@ const char CameraParameters::PIXEL_FORMAT_JPEG[] = "jpeg";
 // Values for focus mode settings.
 const char CameraParameters::FOCUS_MODE_AUTO[] = "auto";
 const char CameraParameters::FOCUS_MODE_INFINITY[] = "infinity";
+const char CameraParameters::FOCUS_MODE_NORMAL[] = "normal";
 const char CameraParameters::FOCUS_MODE_MACRO[] = "macro";
 const char CameraParameters::FOCUS_MODE_FIXED[] = "fixed";
+
+// Values for ISO Settings
+const char CameraParameters::ISO_AUTO[] = "auto";
+const char CameraParameters::ISO_HJR[] = "ISO_HJR";
+const char CameraParameters::ISO_100[] = "ISO100";
+const char CameraParameters::ISO_200[] = "ISO200";
+const char CameraParameters::ISO_400[] = "ISO400";
+const char CameraParameters::ISO_800[] = "ISO800";
+
+//Values for Lens Shading
+const char CameraParameters::LENSSHADE_ENABLE[] = "enable";
+const char CameraParameters::LENSSHADE_DISABLE[] = "disable";
+
+
 
 static const char* portrait = "portrait";
 static const char* landscape = "landscape";

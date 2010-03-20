@@ -159,23 +159,16 @@ int free_cache(int free_size)
  */
 static int is_valid_apk_path(const char *path)
 {
-    int len = strlen(APK_DIR_PREFIX);
-    if (strncmp(path, APK_DIR_PREFIX, len)) {
-        len = strlen(PROTECTED_DIR_PREFIX);
-        if (strncmp(path, PROTECTED_DIR_PREFIX, len)) {
-            LOGE("invalid apk path '%s' (bad prefix)\n", path);
-            return 0;
-        }
-    }
-    if (strchr(path + len, '/')) {
-        LOGE("invalid apk path '%s' (subdir?)\n", path);
-        return 0;
-    }
-    if (path[len] == '.') {
-        LOGE("invalid apk path '%s' (trickery)\n", path);
-        return 0;
-    }
-    return 1;
+    int len1 = strlen(APK_DIR_PREFIX);
+    int len2 = strlen(PROTECTED_DIR_PREFIX);
+    int len3 = strlen(APK_EXT_DIR_PREFIX);
+    int len4 = strlen(PROTECTED_EXT_DIR_PREFIX);
+
+    if (strncmp(path, APK_DIR_PREFIX, len1)==0) return 1;
+    if (strncmp(path, PROTECTED_DIR_PREFIX, len2)==0) return 1;
+    if (strncmp(path, APK_EXT_DIR_PREFIX, len3)==0) return 1;
+    if (strncmp(path, PROTECTED_EXT_DIR_PREFIX, len4)==0) return 1;
+    return 0;
 }
 
 int move_dex(const char *src, const char *dst)
@@ -212,14 +205,14 @@ int rm_dex(const char *path)
     }
 }
 
-int protect(char *pkgname, gid_t gid)
+int protect(char *pkgname, gid_t gid, int external)
 {
     struct stat s;
     char pkgpath[PKG_PATH_MAX];
 
     if (gid < AID_SYSTEM) return -1;
 
-    if (create_pkg_path(pkgpath, PROTECTED_DIR_PREFIX, pkgname, ".apk"))
+    if (create_pkg_path(pkgpath, (external == 1 ? PROTECTED_EXT_DIR_PREFIX : PROTECTED_DIR_PREFIX), pkgname, ".apk"))
         return -1;
 
     if (stat(pkgpath, &s) < 0) return -1;
@@ -392,7 +385,13 @@ int create_cache_path(char path[PKG_PATH_MAX], const char *src)
         return -1;
     }
 
-    const char *cache_path = strncmp(src, "/system", 7) ? DALVIK_CACHE_PREFIX : DALVIK_SYSTEM_CACHE_PREFIX;
+    const char *cache_path = DALVIK_CACHE_PREFIX;
+    if (!strncmp(src, "/system", 7)) {
+        cache_path = DALVIK_SYSTEM_CACHE_PREFIX;
+    }
+    if (!strncmp(src, "/sd-ext", 7)) {
+        cache_path = DALVIK_SDEXT_CACHE_PREFIX;
+    }
 
     dstlen = srclen + strlen(cache_path) + 
         strlen(DALVIK_CACHE_POSTFIX) + 1;
