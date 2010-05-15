@@ -100,7 +100,9 @@ class NotificationManagerService extends INotificationManager.Stub
     private boolean mScreenOn = true;
     private boolean mNotificationScreenOn;
     private boolean mNotificationPulseEnabled;
+    private boolean mNotificationPulseBlend;
     private boolean mPulseBreathingLight;
+    private int mBreathingLightColor;
 
     // for adb connected notifications
     private boolean mUsbConnected;
@@ -362,6 +364,8 @@ class NotificationManagerService extends INotificationManager.Stub
                     Settings.System.NOTIFICATION_LIGHT_PULSE), false, this);
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.NOTIFICATION_SCREEN_ON), false, this);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.BREATHING_LIGHT_COLOR), false, this);
             update();
         }
 
@@ -383,12 +387,20 @@ class NotificationManagerService extends INotificationManager.Stub
                 mNotificationPulseEnabled = pulseEnabled;
                 updateNotificationPulse();
             }
+            boolean pulseBlend = Settings.System.getInt(resolver,
+                        Settings.System.NOTIFICATION_PULSE_BLEND, 0) != 0;
+            if (mNotificationPulseBlend != pulseBlend) {
+                mNotificationPulseBlend = pulseBlend;
+                updateNotificationPulse();
+            }
             boolean screenOn = Settings.System.getInt(resolver,
                         Settings.System.NOTIFICATION_SCREEN_ON, 0) != 0;
             if (mNotificationScreenOn != screenOn) {
                 mNotificationScreenOn = screenOn;
                 updateNotificationPulse();
             }
+            mBreathingLightColor = Settings.System.getInt(resolver,
+                    Settings.System.BREATHING_LIGHT_COLOR, 0x00ffffff);
         }
     }
 
@@ -1039,14 +1051,23 @@ class NotificationManagerService extends INotificationManager.Stub
         // we only flash if screen is off and persistent pulsing is enabled
         if (mLedNotification == null || (mScreenOn && !mNotificationScreenOn) || !mNotificationPulseEnabled) {
             if (mPulseBreathingLight) {
-                mHardware.pulseBreathingLight();
+                mHardware.pulseBreathingLightColor(mBreathingLightColor);
             } else {
                 mHardware.setLightOff_UNCHECKED(HardwareService.LIGHT_ID_NOTIFICATIONS);
             }
         } else {
+            int ledARGB = mLedNotification.notification.ledARGB;
+
+            if (mNotificationPulseBlend) {
+                // Blend all the colors together
+                for (int n=0; n < mLights.size(); n++) {
+                    ledARGB |= mLights.get(n).notification.ledARGB;
+                }
+            }
+	
             mHardware.setLightFlashing_UNCHECKED(
                     HardwareService.LIGHT_ID_NOTIFICATIONS,
-                    mLedNotification.notification.ledARGB,
+                    ledARGB,
                     HardwareService.LIGHT_FLASH_TIMED,
                     mLedNotification.notification.ledOnMS,
                     mLedNotification.notification.ledOffMS);
@@ -1082,7 +1103,9 @@ class NotificationManagerService extends INotificationManager.Stub
     // to accidentally lose.
     private void updateAdbNotification() {
         if (mAdbEnabled && mUsbConnected) {
-            if ("0".equals(SystemProperties.get("persist.adb.notify"))) {
+            if ("0".equals(SystemProperties.get("persist.adb.notify")) ||
+                   Settings.Secure.getInt(mContext.getContentResolver(),
+                           Settings.Secure.ADB_NOTIFY, 1) == 0) {
                 return;
             }
             if (!mAdbNotificationShown) {

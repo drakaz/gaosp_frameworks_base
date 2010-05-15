@@ -1426,6 +1426,14 @@ public final class Settings {
         public static final String NOTIFICATION_LIGHT_PULSE = "notification_light_pulse";
 
         /**
+         * Whether the notification LED color should be blended with all
+	 * active notifications.
+	 * The value is boolean (1 or 0).
+         * @hide
+         */
+        public static final String NOTIFICATION_PULSE_BLEND = "notification_light_pulse_blend";
+
+        /**
          * Whether to pulse the notification LED while the screen is on. The value is
          * boolean (1 or 0).
          * @hide
@@ -1433,11 +1441,28 @@ public final class Settings {
         public static final String NOTIFICATION_SCREEN_ON = "notification_screen_on";
 
         /**
+         * Color to pulse the breathing light
+         * @hide
+         */
+        public static final String BREATHING_LIGHT_COLOR = "breathing_light_color";
+
+        /**
          * Whether to wake the screen with the trackball. The value is boolean (1 or 0).
          * @hide
          */
         public static final String TRACKBALL_WAKE_SCREEN = "trackball_wake_screen";
-
+        /**
+         * Whether to unlock the screen with the trackball. The value is boolean (1 or 0).
+         * @hide
+         */
+        public static final String TRACKBALL_UNLOCK_SCREEN = "trackball_unlock_screen";
+        
+        /**
+         * Whether to show the 4 columns or 5 columns on the launcher.
+         * @hide
+         */
+        public static final String LAUNCHER_COLUMN_NUMBER = "launcher_column_number";
+        
         /**
          * Whether to show the battery level percentage overlayed on the icon.
          * @hide
@@ -1998,8 +2023,14 @@ public final class Settings {
         public static final String ADB_ENABLED = "adb_enabled";
 
         /**
+         * Whether to show ADB notifications.
+         * @hide
+         */
+        public static final String ADB_NOTIFY = "adb_notify";
+            
+        /**
          * Weather Compcache is eanbled.
-	 * @hide
+         * @hide
          */
         public static final String COMPCACHE_ENABLED = "compcache_enabled";
         
@@ -2069,6 +2100,12 @@ public final class Settings {
          */
         public static final String HTTP_PROXY = "http_proxy";
 
+        /**
+         * If proxy should be active on wifi only
+         * @hide
+         */
+        public static final String HTTP_PROXY_WIFI_ONLY = "http_proxy_wifi_only";
+        
         /**
          * Whether the package installer should allow installation of apps downloaded from
          * sources other than the Android Market (vending machine).

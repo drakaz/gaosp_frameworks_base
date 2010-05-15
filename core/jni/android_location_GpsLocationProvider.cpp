@@ -324,3 +324,4 @@ int register_android_location_GpsLocationProvider(JNIEnv* env)
 }
 
 } /* namespace android */
+
