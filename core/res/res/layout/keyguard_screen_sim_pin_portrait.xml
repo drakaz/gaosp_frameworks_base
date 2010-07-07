@@ -36,7 +36,8 @@
             android:singleLine="true"
             android:textAppearance="?android:attr/textAppearanceLarge"/>
 
-        <!-- Carrier info -->
+	<!-- Carrier info -->
+<!-- drakaz : hide useless carrier info to keep space for emergency button
         <TextView android:id="@+id/carrier"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
