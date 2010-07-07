@@ -41,6 +41,7 @@ import com.android.internal.telephony.ITelephony;
 import android.util.Log;
 import android.view.WindowManager;
 
+
 public final class ShutdownThread extends Thread {
     // constants
     private static final String TAG = "ShutdownThread";
@@ -62,6 +63,9 @@ public final class ShutdownThread extends Thread {
 
     // static instance of this thread
     private static final ShutdownThread sInstance = new ShutdownThread();
+
+    // drakaz : reboot recovery variable
+    private static boolean sIsRecovery = false;
     
     private final Object mActionDoneSync = new Object();
     private boolean mActionDone;
@@ -84,6 +88,8 @@ public final class ShutdownThread extends Thread {
     public static void shutdown(final Context context, boolean confirm) {
         // ensure that only one thread is trying to power down.
         // any additional calls are just returned
+        // drakaz : reboot recovery
+	int MessageReboot;    
         synchronized (sIsStartedGuard){
             if (sIsStarted) {
                 Log.d(TAG, "Request to shutdown already running, returning.");
@@ -93,6 +99,12 @@ public final class ShutdownThread extends Thread {
 
         Log.d(TAG, "Notifying thread to start radio shutdown");
 
+	if (sIsRecovery) {
+		MessageReboot = com.android.internal.R.string.reboot_recovery_confirm;
+	} else {
+		MessageReboot = (reboot ? com.android.internal.R.string.reboot_confirm : com.android.internal.R.string.shutdown_confirm);
+	}	
+        
         if (confirm) {
             final AlertDialog dialog;
             // Set different dialog message based on whether or not we're rebooting
@@ -100,7 +112,7 @@ public final class ShutdownThread extends Thread {
                 dialog = new AlertDialog.Builder(context)
                         .setIcon(android.R.drawable.ic_dialog_alert)
                         .setTitle(com.android.internal.R.string.reboot_system)
-                        .setMessage(com.android.internal.R.string.reboot_confirm)
+                        .setMessage(MessageReboot)
                         .setPositiveButton(com.android.internal.R.string.yes, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
                                 beginShutdownSequence(context);
@@ -146,6 +158,13 @@ public final class ShutdownThread extends Thread {
         mRebootReason = reason;
         shutdown(context, confirm);
     }
+    
+    // drakaz : reboot recovery
+    public static void RebootRecovery(final Context context, boolean confirm, final boolean reboot) {
+       	sIsRecovery = true;
+       	shutdown(context, confirm, reboot);
+    }
+
 
     private static void beginShutdownSequence(Context context) {
         synchronized (sIsStartedGuard) {
@@ -157,7 +176,12 @@ public final class ShutdownThread extends Thread {
         ProgressDialog pd = new ProgressDialog(context);
         if (mReboot) {
             pd.setTitle(context.getText(com.android.internal.R.string.reboot_system));
-            pd.setMessage(context.getText(com.android.internal.R.string.reboot_progress));
+            // drakaz : reboot recovery
+            if (sIsRecovery) {
+		pd.setMessage(context.getText(com.android.internal.R.string.reboot_progress_recovery));
+	    } else {
+	    	pd.setMessage(context.getText(com.android.internal.R.string.reboot_progress : com.android.internal.R.string.shutdown_progress));
+	    }
         } else {
             pd.setTitle(context.getText(com.android.internal.R.string.power_off));
             pd.setMessage(context.getText(com.android.internal.R.string.shutdown_progress));
@@ -345,7 +369,12 @@ public final class ShutdownThread extends Thread {
         if (mReboot) {
             Log.i(TAG, "Rebooting, reason: " + mRebootReason);
             try {
-                Power.reboot(mRebootReason);
+            	// drakaz : reboot recovery
+		if (sIsRecovery) {
+			Power.RebootRecovery(mRebootReason);
+		} else {
+			Power.reboot(mRebootReason);
+		}
             } catch (Exception e) {
                 Log.e(TAG, "Reboot failed, will attempt shutdown instead", e);
             }

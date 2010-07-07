@@ -322,6 +322,12 @@
     <!-- status message in phone options dialog for when airplane mode is off -->
     <string name="global_actions_airplane_mode_off_status">Airplane mode is OFF</string>
 
+    <!-- malgon / drakaz : shutdown menu message -->
+    <string name="global_action_reboot">Reboot</string>
+    <string name="global_action_reboot_recovery">Reboot recovery</string>
+    <string name="reboot_recovery_confirm">Your phone will reboot in recovery.</string>
+    <string name="reboot_progress_recovery">Rebooting in recovery\u2026</string>
+       
     <!-- Displayed to the user to tell them that they have started up the phone in "safe mode" -->
     <string name="safeMode">Safe mode</string>
 
