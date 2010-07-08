@@ -113,15 +113,6 @@ public class Power
      */
     public static void RebootRecovery(String reason) throws IOException
     {
-        IMountService mSvc = IMountService.Stub.asInterface(
-                ServiceManager.getService("mount"));
-
-        if (mSvc != null) {
-            try {
-                mSvc.shutdown();
-            } catch (Exception e) {
-            }
-        }
         RebootRecoveryNative(reason);
     }
 

@@ -102,7 +102,7 @@ public final class ShutdownThread extends Thread {
 	if (sIsRecovery) {
 		MessageReboot = com.android.internal.R.string.reboot_recovery_confirm;
 	} else {
-		MessageReboot = (reboot ? com.android.internal.R.string.reboot_confirm : com.android.internal.R.string.shutdown_confirm);
+		MessageReboot = (com.android.internal.R.string.shutdown_confirm);
 	}	
         
         if (confirm) {
@@ -180,7 +180,7 @@ public final class ShutdownThread extends Thread {
             if (sIsRecovery) {
 		pd.setMessage(context.getText(com.android.internal.R.string.reboot_progress_recovery));
 	    } else {
-	    	pd.setMessage(context.getText(com.android.internal.R.string.reboot_progress : com.android.internal.R.string.shutdown_progress));
+	    	pd.setMessage(context.getText(com.android.internal.R.string.reboot_progress));
 	    }
         } else {
             pd.setTitle(context.getText(com.android.internal.R.string.power_off));
