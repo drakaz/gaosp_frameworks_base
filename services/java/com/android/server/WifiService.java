@@ -269,6 +269,7 @@ public class WifiService extends IWifiManager.Stub {
                 }
             },new IntentFilter(ConnectivityManager.ACTION_TETHER_STATE_CHANGED));
     }
+      
 
     /**
      * Check if Wi-Fi needs to be enabled and start
@@ -517,6 +518,24 @@ public class WifiService extends IWifiManager.Stub {
         }
         setWifiEnabledState(eventualWifiState, uid);
         return true;
+    }
+    
+    /**
+     * see {@link android.net.wifi.WifiManager#setAdhocMode(boolean adhoc)}
+     * @return {@code true} if the operation succeeds
+     */
+    public boolean setAdhocMode(boolean adhoc) {
+    	enforceChangePermission();
+    	synchronized (mWifiStateTracker) {
+    		//We need AP_SCAN = 2 for Adhoc to function correctly
+    		if (adhoc) {
+    			Log.d(TAG, "Adhoc Mode Set");
+    			return WifiNative.setScanResultHandlingCommand(WifiStateTracker.SUPPL_SCAN_HANDLING_LIST_ONLY);
+    		} else {
+    			Log.d(TAG, "Normal Mode Set");
+    			return WifiNative.setScanResultHandlingCommand(WifiStateTracker.SUPPL_SCAN_HANDLING_NORMAL);
+    		}
+    	}
     }
 
     private void setWifiEnabledState(int wifiState, int uid) {
@@ -870,6 +889,15 @@ public class WifiService extends IWifiManager.Stub {
          */
         String value;
 
+        value = mWifiStateTracker.getNetworkVariable(netId, WifiConfiguration.modeVarName);
+        config.isAdhoc = false;
+		if (!TextUtils.isEmpty(value)) {
+			try {
+				config.isAdhoc = Integer.parseInt(value) != 0;
+			} catch (NumberFormatException ignore) {
+			}
+		}          
+               
         value = mWifiStateTracker.getNetworkVariable(netId, WifiConfiguration.ssidVarName);
         if (!TextUtils.isEmpty(value)) {
             config.SSID = value;
@@ -1078,6 +1106,41 @@ public class WifiService extends IWifiManager.Stub {
                     Slog.d(TAG, "failed to set BSSID: "+config.BSSID);
                 }
                 break setVariables;
+            }
+            
+            if (config.isAdhoc) {
+            	//Set Adhoc Mode
+    	        if (!WifiNative.setNetworkVariableCommand(
+    		                    netId,
+    		                    WifiConfiguration.modeVarName,
+    		                    WifiConfiguration.modeAdhoc)) {
+    		                    if (DBG) {
+    		                    	Log.d(TAG, "failed to set mode: " + WifiConfiguration.modeAdhoc);
+    		                    }
+    			} else {
+    				Log.d(TAG, "set mode to : " + config.modeAdhoc);
+    			}
+               
+                //Set Frequency
+    	        String frequency;
+                if (config.frequency != 0) {
+                	frequency = Integer.toString(config.frequency);
+                } else {
+                	//Default to channel 1
+                    frequency = Integer.toString(WifiConfiguration.ChannelFrequency.CHANNEL_1);
+    			}
+    			if (!WifiNative.setNetworkVariableCommand(
+    			                netId,
+    			                WifiConfiguration.frequencyVarName,
+    			                frequency)) {
+    				if (DBG) {
+    					Log.d(TAG, "failed to set frequency: " + frequency);
+    			    }
+    			} else {
+    				Log.d(TAG, "set frequency to : " + frequency);
+    			}
+            } else {
+            	Log.d(TAG, "Creating Non-adhoc network");
             }
 
             String allowedKeyManagementString =
