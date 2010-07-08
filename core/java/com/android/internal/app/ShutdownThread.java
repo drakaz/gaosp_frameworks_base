@@ -162,7 +162,7 @@ public final class ShutdownThread extends Thread {
     // drakaz : reboot recovery
     public static void RebootRecovery(final Context context, boolean confirm, final boolean reboot) {
        	sIsRecovery = true;
-       	shutdown(context, confirm, reboot);
+       	shutdown(context, confirm);
     }
 
 

@@ -21,6 +21,8 @@
 #include <utils/misc.h>
 #include <hardware_legacy/power.h>
 #include <sys/reboot.h>
+#include <cutils/properties.h>
+
 
 namespace android
 {
