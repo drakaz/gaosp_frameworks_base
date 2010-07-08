@@ -228,6 +228,7 @@ public class GpsLocationProvider implements LocationProviderInterface {
     private String mNtpServer;
     private String mSuplServerHost;
     private int mSuplServerPort;
+    private boolean mSetSuplServer;
     private String mC2KServerHost;
     private int mC2KServerPort;
 
@@ -378,6 +379,7 @@ public class GpsLocationProvider implements LocationProviderInterface {
             if (mSuplServerHost != null && portString != null) {
                 try {
                     mSuplServerPort = Integer.parseInt(portString);
+		    mSetSuplServer = true;	
                 } catch (NumberFormatException e) {
                     Log.e(TAG, "unable to parse SUPL_PORT: " + portString);
                 }
@@ -448,19 +450,22 @@ public class GpsLocationProvider implements LocationProviderInterface {
                 + " info: " + info);
         }
 
-        if (info != null && info.getType() == ConnectivityManager.TYPE_MOBILE_SUPL
-                && mAGpsDataConnectionState == AGPS_DATA_CONNECTION_OPENING) {
+        if (info != null && (info.getType() == ConnectivityManager.TYPE_MOBILE_SUPL
+			     || info.getType() == ConnectivityManager.TYPE_MOBILE)
+                /*&& mAGpsDataConnectionState == AGPS_DATA_CONNECTION_OPENING*/) {
             String apnName = info.getExtraInfo();
-            if (mNetworkAvailable && apnName != null && apnName.length() > 0) {
+            if (mNetworkAvailable && apnName != null && apnName.length() > 0 && info.getState() == NetworkInfo.State.CONNECTED) {
                 mAGpsApn = apnName;
                 if (DEBUG) Log.d(TAG, "call native_agps_data_conn_open");
-                native_agps_data_conn_open(apnName);
+		native_set_supl_apn("");
+                //native_agps_data_conn_open(apnName);
                 mAGpsDataConnectionState = AGPS_DATA_CONNECTION_OPEN;
             } else {
                 if (DEBUG) Log.d(TAG, "call native_agps_data_conn_failed");
                 mAGpsApn = null;
                 mAGpsDataConnectionState = AGPS_DATA_CONNECTION_CLOSED;
-                native_agps_data_conn_failed();
+		native_set_supl_apn("");
+                //native_agps_data_conn_failed();
             }
         }
 
@@ -529,6 +534,28 @@ public class GpsLocationProvider implements LocationProviderInterface {
         }
         mDownloadXtraDataPending = false;
 
+                    // Set the SUPL server address if we have not yet
+                    if (mSetSuplServer) {
+                        try {
+                            InetAddress inetAddress = InetAddress.getByName(mSuplServerHost);
+                            if (inetAddress != null) {
+                                byte[] addrBytes = inetAddress.getAddress();
+                                long addr = 0;
+                                for (int i = 0; i < addrBytes.length; i++) {
+                                    int temp = addrBytes[i];
+                                    // signed -> unsigned
+                                    if (temp < 0) temp = 256 + temp;
+                                    addr = addr * 256 + temp;
+                                }
+                                // use MS-Based position mode if SUPL support is enabled
+                                native_set_supl_server((int)addr, mSuplServerPort);
+                                mSetSuplServer = false; 
+                            }
+                        } catch (UnknownHostException e) {
+                            Log.e(TAG, "unknown host for SUPL server " + mSuplServerHost);
+                        }
+                    }
+
 
         GpsXtraDownloader xtraDownloader = new GpsXtraDownloader(mContext, mProperties);
         byte[] data = xtraDownloader.downloadXtraData();
@@ -556,10 +583,10 @@ public class GpsLocationProvider implements LocationProviderInterface {
     }
 
     private void handleUpdateLocation(Location location) {
-        if (location.hasAccuracy()) {
+    /*    if (location.hasAccuracy()) {
             native_inject_location(location.getLatitude(), location.getLongitude(),
                     location.getAccuracy());
-        }
+        } */
     }
 
     /**
@@ -659,12 +686,7 @@ public class GpsLocationProvider implements LocationProviderInterface {
         mEnabled = native_init();
 
         if (mEnabled) {
-            if (mSuplServerHost != null) {
-                native_set_agps_server(AGPS_TYPE_SUPL, mSuplServerHost, mSuplServerPort);
-            }
-            if (mC2KServerHost != null) {
-                native_set_agps_server(AGPS_TYPE_C2K, mC2KServerHost, mC2KServerPort);
-            }
+	    Log.d(TAG, "isXtraEnabled: "+native_supports_xtra());
 
             // run event listener thread while we are enabled
             mEventThread = new GpsEventThread();
@@ -772,7 +794,10 @@ public class GpsLocationProvider implements LocationProviderInterface {
             if (interval < 1) {
                 interval = 1;
             }
+	    if(interval <= 0)
+		interval = 1;	
             mFixInterval = interval;
+	    native_set_fix_frequency(mFixInterval);
         }
     }
 
@@ -853,7 +878,7 @@ public class GpsLocationProvider implements LocationProviderInterface {
         
         if ("delete_aiding_data".equals(command)) {
             return deleteAidingData(extras);
-        }
+        }/*
         if ("force_time_injection".equals(command)) {
             mHandler.removeMessages(INJECT_NTP_TIME);
             mHandler.sendMessage(Message.obtain(mHandler, INJECT_NTP_TIME));
@@ -865,7 +890,7 @@ public class GpsLocationProvider implements LocationProviderInterface {
                 return true;
             }
             return false;
-        }
+        }*/
         
         Log.w(TAG, "sendExtraCommand: unknown command " + command);
         return false;
@@ -904,6 +929,7 @@ public class GpsLocationProvider implements LocationProviderInterface {
     private void startNavigating() {
         if (!mStarted) {
             if (DEBUG) Log.d(TAG, "startNavigating");
+
             mStarted = true;
             int positionMode;
             if (Settings.Secure.getInt(mContext.getContentResolver(),
@@ -913,7 +939,7 @@ public class GpsLocationProvider implements LocationProviderInterface {
                 positionMode = GPS_POSITION_MODE_STANDALONE;
             }
 
-            if (!native_start(positionMode, false, 1)) {
+            if (!native_start(GPS_POSITION_MODE_STANDALONE/*positionMode*/, false, 1)) {
                 mStarted = false;
                 Log.e(TAG, "native_start failed in startNavigating()");
                 return;
@@ -1070,51 +1096,55 @@ public class GpsLocationProvider implements LocationProviderInterface {
             }
 
             // beware, the events can come out of order
-            if ((mNavigating || mEngineOn) && !mWakeLock.isHeld()) {
+            mNavigating = (status == GPS_STATUS_ENGINE_ON);
+    
+            if (wasNavigating == mNavigating) {
+                return;
+            }
+            
+            if (mNavigating) {
                 if (DEBUG) Log.d(TAG, "Acquiring wakelock");
                  mWakeLock.acquire();
             }
-
-            if (wasNavigating != mNavigating) {
-                int size = mListeners.size();
-                for (int i = 0; i < size; i++) {
-                    Listener listener = mListeners.get(i);
-                    try {
-                        if (mNavigating) {
-                            listener.mListener.onGpsStarted();
-                        } else {
-                            listener.mListener.onGpsStopped();
-                        }
-                    } catch (RemoteException e) {
-                        Log.w(TAG, "RemoteException in reportStatus");
-                        mListeners.remove(listener);
-                        // adjust for size of list changing
-                        size--;
-                    }
-                }
+        
+            int size = mListeners.size();
+            for (int i = 0; i < size; i++) {
+                Listener listener = mListeners.get(i);
 
                 try {
-                    // update battery stats
-                    for (int i=mClientUids.size() - 1; i >= 0; i--) {
-                        int uid = mClientUids.keyAt(i);
-                        if (mNavigating) {
-                            mBatteryStats.noteStartGps(uid);
-                        } else {
-                            mBatteryStats.noteStopGps(uid);
-                        }
+                    if (mNavigating) {
+                        listener.mListener.onGpsStarted(); 
+                    } else {
+                        listener.mListener.onGpsStopped(); 
                     }
                 } catch (RemoteException e) {
                     Log.w(TAG, "RemoteException in reportStatus");
+                    mListeners.remove(listener);
+                    // adjust for size of list changing
+                    size--;
                 }
-
-                // send an intent to notify that the GPS has been enabled or disabled.
-                Intent intent = new Intent(GPS_ENABLED_CHANGE_ACTION);
-                intent.putExtra(EXTRA_ENABLED, mNavigating);
-                mContext.sendBroadcast(intent);
+            }
+            try {
+                // update battery stats
+                for (int i=mClientUids.size() - 1; i >= 0; i--) {
+                    int uid = mClientUids.keyAt(i);
+                    if (mNavigating) {
+                        mBatteryStats.noteStartGps(uid);
+                    } else {
+                        mBatteryStats.noteStopGps(uid);
+                    }
+                }
+            } catch (RemoteException e) {
+                Log.w(TAG, "RemoteException in reportStatus");
             }
 
             // beware, the events can come out of order
-            if (!mNavigating && !mEngineOn && mWakeLock.isHeld()) {
+            // send an intent to notify that the GPS has been enabled or disabled.
+            Intent intent = new Intent(GPS_ENABLED_CHANGE_ACTION);
+            intent.putExtra(EXTRA_ENABLED, mNavigating);
+            mContext.sendBroadcast(intent);
+
+            if (!mNavigating) {
                 if (DEBUG) Log.d(TAG, "Releasing wakelock");
                 mWakeLock.release();
             }
@@ -1176,6 +1206,7 @@ public class GpsLocationProvider implements LocationProviderInterface {
      * called from native code to update AGPS status
      */
     private void reportAGpsStatus(int type, int status) {
+	/*
         switch (status) {
             case GPS_REQUEST_AGPS_DATA_CONN:
                  int result = mConnMgr.startUsingNetworkFeature(
@@ -1211,13 +1242,14 @@ public class GpsLocationProvider implements LocationProviderInterface {
             case GPS_AGPS_DATA_CONN_FAILED:
                 // Log.d(TAG, "GPS_AGPS_DATA_CONN_FAILED");
                 break;
-        }
+        }*/
     }
 
     /**
      * called from native code to report NMEA data received
      */
     private void reportNmea(int index, long timestamp) {
+	/*
         synchronized(mListeners) {
             int size = mListeners.size();
             if (size > 0) {
@@ -1237,7 +1269,7 @@ public class GpsLocationProvider implements LocationProviderInterface {
                     }
                 }
             }
-        }
+        }*/
     }
 
     /**
@@ -1257,14 +1289,14 @@ public class GpsLocationProvider implements LocationProviderInterface {
     	public boolean sendNiResponse(int notificationId, int userResponse)
     	{
         	// TODO Add Permission check
-    		
+    		/*
     		StringBuilder extrasBuf = new StringBuilder();
 
     		if (DEBUG) Log.d(TAG, "sendNiResponse, notifId: " + notificationId +
     				", response: " + userResponse);
     		
     		native_send_ni_response(notificationId, userResponse);
-    		
+    		*/    		
     		return true;
     	}        
     };
@@ -1430,8 +1462,6 @@ public class GpsLocationProvider implements LocationProviderInterface {
     private float mSvAzimuths[] = new float[MAX_SVS];
     private int mSvMasks[] = new int[3];
     private int mSvCount;
-    // preallocated to avoid memory allocation in reportNmea()
-    private byte[] mNmeaBuffer = new byte[120];
 
     static { class_init_native(); }
     private static native void class_init_native();
@@ -1449,8 +1479,6 @@ public class GpsLocationProvider implements LocationProviderInterface {
     // mask[0] is ephemeris mask and mask[1] is almanac mask
     private native int native_read_sv_status(int[] svs, float[] snrs,
             float[] elevations, float[] azimuths, int[] masks);
-    private native int native_read_nmea(int index, byte[] buffer, int bufferSize);
-    private native void native_inject_location(double latitude, double longitude, float accuracy);
 
     // XTRA Support
     private native void native_inject_time(long time, long timeReference, int uncertainty);
@@ -1460,12 +1488,8 @@ public class GpsLocationProvider implements LocationProviderInterface {
     // DEBUG Support
     private native String native_get_internal_state();
 
-    // AGPS Support
-    private native void native_agps_data_conn_open(String apn);
-    private native void native_agps_data_conn_closed();
-    private native void native_agps_data_conn_failed();
-    private native void native_set_agps_server(int type, String hostname, int port);
+    // SUPL Support    
+    private native void native_set_supl_server(int addr, int port);
+    private native void native_set_supl_apn(String apn);
 
-    // Network-initiated (NI) Support
-    private native void native_send_ni_response(int notificationId, int userResponse);
 }
