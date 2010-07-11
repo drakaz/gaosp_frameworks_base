@@ -476,7 +476,7 @@ static jboolean android_net_wifi_clearBlacklistCommand(JNIEnv* env, jobject claz
 {
     return doBooleanCommand("BLACKLIST clear", "OK");
 }
-
+/*
 static jboolean android_net_wifi_doDhcpRequest(JNIEnv* env, jobject clazz, jobject info)
 {
     jint ipaddr, gateway, mask, dns1, dns2, server, lease;
@@ -498,7 +498,7 @@ static jstring android_net_wifi_getDhcpError(JNIEnv* env, jobject clazz)
 {
     return env->NewStringUTF(::get_dhcp_error_string());
 }
-
+*/
 // ----------------------------------------------------------------------------
 
 /*
@@ -555,8 +555,8 @@ static JNINativeMethod gWifiMethods[] = {
     { "addToBlacklistCommand", "(Ljava/lang/String;)Z", (void*) android_net_wifi_addToBlacklistCommand },
     { "clearBlacklistCommand", "()Z", (void*) android_net_wifi_clearBlacklistCommand },
 
-    { "doDhcpRequest", "(Landroid/net/DhcpInfo;)Z", (void*) android_net_wifi_doDhcpRequest },
-    { "getDhcpError", "()Ljava/lang/String;", (void*) android_net_wifi_getDhcpError },
+//    { "doDhcpRequest", "(Landroid/net/DhcpInfo;)Z", (void*) android_net_wifi_doDhcpRequest },
+//    { "getDhcpError", "()Ljava/lang/String;", (void*) android_net_wifi_getDhcpError },
 };
 
 int register_android_net_wifi_WifiManager(JNIEnv* env)

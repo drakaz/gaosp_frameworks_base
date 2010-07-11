@@ -65,6 +65,7 @@ import android.os.RemoteException;
 import android.os.ServiceManager;
 import android.provider.Settings;
 import android.util.Slog;
+import android.util.Log;
 import android.text.TextUtils;
 
 import java.util.ArrayList;

@@ -43,6 +43,9 @@ public class Environment {
     private static final File EXTERNAL_STORAGE_DIRECTORY
             = getDirectory("EXTERNAL_STORAGE", "/sdcard");
 
+    private static final File EXTERNAL_SDCARD_DIRECTORY
+            = getDirectory("EXTERNAL_SDCARD", "/sdcard2");
+
     private static final File EXTERNAL_STORAGE_ANDROID_DATA_DIRECTORY
             = new File (new File(getDirectory("EXTERNAL_STORAGE", "/sdcard"),
                     "Android"), "data");
@@ -86,6 +89,19 @@ public class Environment {
     public static File getExternalStorageDirectory() {
         return EXTERNAL_STORAGE_DIRECTORY;
     }
+
+     /**
+     * Gets the Android external SD.  This directory may not
+     * currently be accessible if it has been mounted by the user on their
+     * computer, has been removed from the device, or some other problem has
+     * happened.  You can determine its current state with
+     * {@link #getExternalStorageState()}.
+     * @hide
+     */
+    public static File getExternalSdDirectory() {
+        return EXTERNAL_SDCARD_DIRECTORY;
+    }
+ 
 
     /**
      * Standard directory in which to place any audio files that should be
