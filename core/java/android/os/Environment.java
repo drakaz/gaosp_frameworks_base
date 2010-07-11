@@ -345,6 +345,27 @@ public class Environment {
         }
     }
 
+    /**
+     * Gets the current state of the external sdcard device.
+     * Note: This call should be deprecated as it doesn't support
+     * multiple volumes.
+     * 
+     * <p>See {@link #getExternalStorageDirectory()} for an example of its use.
+     * @hide
+     */
+    public static String getExternalSdState() {
+        try {
+            if (mMntSvc == null) {
+                mMntSvc = IMountService.Stub.asInterface(ServiceManager
+                                                         .getService("mount"));
+            }
+            return mMntSvc.getVolumeState(getExternalSdDirectory().toString());
+        } catch (Exception rex) {
+            return Environment.MEDIA_REMOVED;
+        }
+    }
+
+
     static File getDirectory(String variableName, String defaultPath) {
         String path = System.getenv(variableName);
         return path == null ? new File(defaultPath) : new File(path);
