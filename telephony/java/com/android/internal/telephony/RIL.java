@@ -2909,23 +2909,21 @@ public final class RIL extends BaseCommands implements CommandsInterface {
         String strings[] = (String [])responseStrings(p);
         ArrayList<NetworkInfo> ret;
 
-// drakaz : scanning radio network patch
-        if (strings.length % 5 != 0) {
+        if (strings.length % 4 != 0) {
             throw new RuntimeException(
                 "RIL_REQUEST_QUERY_AVAILABLE_NETWORKS: invalid response. Got "
-                + strings.length + " strings, expected multible of 5");
+                + strings.length + " strings, expected multible of 4");
         }
 
-        ret = new ArrayList<NetworkInfo>(strings.length / 5);
+        ret = new ArrayList<NetworkInfo>(strings.length / 4);
 
-        for (int i = 0 ; i < strings.length ; i += 5) {
+        for (int i = 0 ; i < strings.length ; i += 4) {
             ret.add (
                 new NetworkInfo(
                     strings[i+0],
                     strings[i+1],
                     strings[i+2],
-		    strings[i+3],
-                    strings[i+4]));
+                    strings[i+3]));
         }
 
         return ret;
