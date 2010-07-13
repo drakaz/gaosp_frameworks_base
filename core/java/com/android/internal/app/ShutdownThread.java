@@ -101,6 +101,8 @@ public final class ShutdownThread extends Thread {
 
 	if (sIsRecovery) {
 		MessageReboot = com.android.internal.R.string.reboot_recovery_confirm;
+	} else if (mReboot) {
+		MessageReboot = com.android.internal.R.string.reboot_confirm;
 	} else {
 		MessageReboot = (com.android.internal.R.string.shutdown_confirm);
 	}	
@@ -108,7 +110,19 @@ public final class ShutdownThread extends Thread {
         if (confirm) {
             final AlertDialog dialog;
             // Set different dialog message based on whether or not we're rebooting
-            if (mReboot) {
+            if (sIsRecovery) {
+		dialog = new AlertDialog.Builder(context)
+                        .setIcon(android.R.drawable.ic_dialog_alert)
+                        .setTitle(com.android.internal.R.string.global_action_reboot_recovery)
+                        .setMessage(MessageReboot)
+                        .setPositiveButton(com.android.internal.R.string.yes, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                beginShutdownSequence(context);
+                            }
+                        })
+                        .setNegativeButton(com.android.internal.R.string.no, null)
+                        .create();
+ 	    } else if (mReboot) {
                 dialog = new AlertDialog.Builder(context)
                         .setIcon(android.R.drawable.ic_dialog_alert)
                         .setTitle(com.android.internal.R.string.reboot_system)
@@ -129,18 +143,18 @@ public final class ShutdownThread extends Thread {
                             public void onClick(DialogInterface dialog, int which) {
                                 beginShutdownSequence(context);
                             }
-                        })
-                        .setNegativeButton(com.android.internal.R.string.no, null)
-                        .create();
-            }
-            dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG);
-            if (!context.getResources().getBoolean(
-                    com.android.internal.R.bool.config_sf_slowBlur)) {
-                dialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND);
-            }
-            dialog.show();
-        } else {
-            beginShutdownSequence(context);
+				})
+				.setNegativeButton(com.android.internal.R.string.no, null)
+				.create();
+		    }
+		    dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG);
+		    if (!context.getResources().getBoolean(
+			    com.android.internal.R.bool.config_sf_slowBlur)) {
+			dialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND);
+		    }
+		    dialog.show();
+		} else {
+		    beginShutdownSequence(context);
         }
     }
 
@@ -162,6 +176,8 @@ public final class ShutdownThread extends Thread {
     // drakaz : reboot recovery
     public static void RebootRecovery(final Context context, boolean confirm, final boolean reboot) {
        	sIsRecovery = true;
+	mReboot = true;
+        mRebootReason = "recovery";
        	shutdown(context, confirm);
     }
 
@@ -366,11 +382,12 @@ public final class ShutdownThread extends Thread {
             }
         }
 
-        if (mReboot) {
+        if ((mReboot) || (sIsRecovery)) {
             Log.i(TAG, "Rebooting, reason: " + mRebootReason);
             try {
             	// drakaz : reboot recovery
 		if (sIsRecovery) {
+			Log.i(TAG, "RECOVERYYYY!!");
 			Power.RebootRecovery(mRebootReason);
 		} else {
 			Power.reboot(mRebootReason);
