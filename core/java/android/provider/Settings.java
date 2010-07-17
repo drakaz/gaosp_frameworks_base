@@ -1552,6 +1552,12 @@ public final class Settings {
          * @hide
          */
         public static final String ACCELEROMETER_ROTATION_MODE = "accelerometer_rotation_mode";
+
+        /**
+         * Whether to use or not the proximity sensor
+         * @hide
+         */
+        public static final String THROTTLE_PROXIMITY_SENSOR =  "throttle_proximity_sensor";
         
         /**
          * Specifies the number of recent apps to show (8, 12, 16)
@@ -3711,7 +3717,7 @@ public final class Settings {
          */
         public static final String ALLOW_MOVE_ALL_APPS_EXTERNAL =
                 "allow_move_all_apps_external";
-        
+
         /**
          * @hide
          */
