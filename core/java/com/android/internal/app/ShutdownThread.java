@@ -387,7 +387,6 @@ public final class ShutdownThread extends Thread {
             try {
             	// drakaz : reboot recovery
 		if (sIsRecovery) {
-			Log.i(TAG, "RECOVERYYYY!!");
 			Power.RebootRecovery(mRebootReason);
 		} else {
 			Power.reboot(mRebootReason);
@@ -406,8 +405,10 @@ public final class ShutdownThread extends Thread {
             }
         }
 
-        // Shutdown power
-        Log.i(TAG, "Performing low-level shutdown...");
-        Power.shutdown();
+	if (!sIsRecovery) {
+        	// Shutdown power
+        	Log.i(TAG, "Performing low-level shutdown...");
+        	Power.shutdown();
+	}
     }
 }
