@@ -87,9 +87,18 @@ public class Camera {
      * Returns a new Camera object.
      */
     public static Camera open() {
+        CameraSwitch.openMainCamera();
         return new Camera();
     }
 
+    /**
+     * Returns a new Camera object for the given cameraNode
+     */
+    public static Camera open(String cameraNode) {
+        CameraSwitch.openCamera(cameraNode);
+        return new Camera();
+    }
+    
     Camera() {
         mShutterCallback = null;
         mRawImageCallback = null;
@@ -644,7 +653,11 @@ public class Camera {
      * @param params the Parameters to use for this Camera service
      */
     public void setParameters(Parameters params) {
-        native_setParameters(params.flatten());
+        try {
+            native_setParameters(params.flatten());
+        } catch (RuntimeException ex) {
+            Log.e(TAG, "Failed to set all parameters");
+        }
     }
 
     /**
@@ -726,7 +739,12 @@ public class Camera {
         private static final String KEY_GPS_LATITUDE = "gps-latitude";
         private static final String KEY_GPS_LONGITUDE = "gps-longitude";
         private static final String KEY_GPS_ALTITUDE = "gps-altitude";
+        private static final String KEY_GPS_LATITUDE_REF = "gps-latitude-ref";
+        private static final String KEY_GPS_LONGITUDE_REF = "gps-longitude-ref";
+        private static final String KEY_GPS_ALTITUDE_REF = "gps-altitude-ref";
+        private static final String KEY_GPS_STATUS = "gps-status";
         private static final String KEY_GPS_TIMESTAMP = "gps-timestamp";
+        private static final String KEY_EXIF_DATETIME = "exif-datetime";
         private static final String KEY_GPS_PROCESSING_METHOD = "gps-processing-method";
         private static final String KEY_WHITE_BALANCE = "whitebalance";
         private static final String KEY_EFFECT = "effect";
@@ -734,6 +752,8 @@ public class Camera {
         private static final String KEY_SCENE_MODE = "scene-mode";
         private static final String KEY_FLASH_MODE = "flash-mode";
         private static final String KEY_FOCUS_MODE = "focus-mode";
+        private static final String KEY_ISO_MODE = "iso";
+        private static final String KEY_LENSSHADE = "lensshade";
         private static final String KEY_FOCAL_LENGTH = "focal-length";
         private static final String KEY_HORIZONTAL_VIEW_ANGLE = "horizontal-view-angle";
         private static final String KEY_VERTICAL_VIEW_ANGLE = "vertical-view-angle";
@@ -741,11 +761,18 @@ public class Camera {
         private static final String KEY_MAX_EXPOSURE_COMPENSATION = "max-exposure-compensation";
         private static final String KEY_MIN_EXPOSURE_COMPENSATION = "min-exposure-compensation";
         private static final String KEY_EXPOSURE_COMPENSATION_STEP = "exposure-compensation-step";
+        private static final String KEY_AUTO_EXPOSURE = "auto-exposure";
         private static final String KEY_ZOOM = "zoom";
         private static final String KEY_MAX_ZOOM = "max-zoom";
         private static final String KEY_ZOOM_RATIOS = "zoom-ratios";
         private static final String KEY_ZOOM_SUPPORTED = "zoom-supported";
         private static final String KEY_SMOOTH_ZOOM_SUPPORTED = "smooth-zoom-supported";
+        private static final String KEY_SHARPNESS = "sharpness";
+        private static final String KEY_MAX_SHARPNESS = "sharpness-max";
+        private static final String KEY_CONTRAST = "contrast";
+        private static final String KEY_MAX_CONTRAST = "contrast-max";
+        private static final String KEY_SATURATION = "saturation";
+        private static final String KEY_MAX_SATURATION = "saturation-max";
         // Parameter key suffix for supported values.
         private static final String SUPPORTED_VALUES_SUFFIX = "-values";
 
@@ -772,11 +799,32 @@ public class Camera {
         public static final String EFFECT_BLACKBOARD = "blackboard";
         public static final String EFFECT_AQUA = "aqua";
 
+        // Values for auto exposure settings.
+        public static final String AUTO_EXPOSURE_FRAME_AVG = "frame-average";
+        public static final String AUTO_EXPOSURE_CENTER_WEIGHTED = "center-weighted";
+        public static final String AUTO_EXPOSURE_SPOT_METERING = "spot-metering";
+
         // Values for antibanding settings.
         public static final String ANTIBANDING_AUTO = "auto";
         public static final String ANTIBANDING_50HZ = "50hz";
         public static final String ANTIBANDING_60HZ = "60hz";
         public static final String ANTIBANDING_OFF = "off";
+
+        //Values for ISO settings
+
+        public static final String ISO_AUTO = "auto";
+        public static final String ISO_HJR = "ISO_HJR";
+        public static final String ISO_100 = "ISO100";
+        public static final String ISO_200 = "ISO200";
+        public static final String ISO_400 = "ISO400";
+        public static final String ISO_800 = "ISO800";
+
+        //Values for Lens Shading
+
+        public static final String LENSSHADE_ENABLE = "enable";
+        public static final String LENSSHADE_DISABLE= "disable";
+
+
 
         // Values for flash mode settings.
         /**
@@ -841,6 +889,7 @@ public class Camera {
          * {@link #autoFocus(AutoFocusCallback)} in this mode.
          */
         public static final String FOCUS_MODE_INFINITY = "infinity";
+        public static final String FOCUS_MODE_NORMAL = "normal";
         public static final String FOCUS_MODE_MACRO = "macro";
 
         /**
@@ -978,7 +1027,8 @@ public class Camera {
          * @return the int value of the parameter
          */
         public int getInt(String key) {
-            return Integer.parseInt(mMap.get(key));
+            String value = mMap.get(key);
+            return value == null ? 0 : Integer.parseInt(value);
         }
 
         /**
@@ -1318,6 +1368,15 @@ public class Camera {
         }
 
         /**
+         * Sets GPS latitude reference coordinate. This will be stored in JPEG EXIF
+         * header.
+         * @param latitude GPS latitude reference coordinate.
+         */
+        public void setGpsLatitudeRef(String latRef) {
+            set(KEY_GPS_LATITUDE_REF, latRef);
+        }
+
+        /**
          * Sets GPS latitude coordinate. This will be stored in JPEG EXIF
          * header.
          *
@@ -1328,6 +1387,15 @@ public class Camera {
         }
 
         /**
+         * Sets GPS longitude reference coordinate. This will be stored in JPEG EXIF
+         * header.
+         * @param latitude GPS longitude reference coordinate.
+         */
+        public void setGpsLongitudeRef(String lonRef) {
+            set(KEY_GPS_LONGITUDE_REF, lonRef);
+        }
+
+        /**
          * Sets GPS longitude coordinate. This will be stored in JPEG EXIF
          * header.
          *
@@ -1335,6 +1403,14 @@ public class Camera {
          */
         public void setGpsLongitude(double longitude) {
             set(KEY_GPS_LONGITUDE, Double.toString(longitude));
+        }
+
+        /**
+         * Sets GPS altitude reference. This will be stored in JPEG EXIF header.
+         * @param altitude reference GPS altitude in meters.
+         */
+        public void setGpsAltitudeRef(double altRef) {
+            set(KEY_GPS_ALTITUDE_REF, Double.toString(altRef));
         }
 
         /**
@@ -1364,6 +1440,27 @@ public class Camera {
          */
         public void setGpsProcessingMethod(String processing_method) {
             set(KEY_GPS_PROCESSING_METHOD, processing_method);
+
+        }
+
+        /**
+         * Sets system timestamp. This will be stored in JPEG EXIF header.
+         *
+         * @param timestamp current timestamp (UTC in seconds since January 1,
+         *                  1970).
+         */
+        public void setExifDateTime(String dateTime) {
+            set(KEY_EXIF_DATETIME, dateTime);
+        }
+
+        /**
+         * Sets GPS Status. This will be stored in JPEG EXIF header.
+         *
+         * @param status GPS status (UTC in seconds since January 1,
+         *                  1970).
+         */
+        public void setGpsStatus(double status) {
+            set(KEY_GPS_STATUS, Double.toString(status));
         }
 
         /**
@@ -1371,8 +1468,11 @@ public class Camera {
          * parameters.
          */
         public void removeGpsData() {
+            remove(KEY_GPS_LATITUDE_REF);
             remove(KEY_GPS_LATITUDE);
+            remove(KEY_GPS_LONGITUDE_REF);
             remove(KEY_GPS_LONGITUDE);
+            remove(KEY_GPS_ALTITUDE_REF);
             remove(KEY_GPS_ALTITUDE);
             remove(KEY_GPS_TIMESTAMP);
             remove(KEY_GPS_PROCESSING_METHOD);
@@ -1460,6 +1560,99 @@ public class Camera {
             return split(str);
         }
 
+
+        /**
+         * Get Sharpness level
+         *
+         * @return sharpness level
+         */
+        public int getSharpness(){
+            return getInt(KEY_SHARPNESS);
+        }
+
+        /**
+         * Set Sharpness Level
+         *
+         * @param sharpness level
+         */
+        public void setSharpness(int sharpness){
+            if((sharpness < 0) || (sharpness > getMaxSharpness()) )
+                throw new IllegalArgumentException(
+                        "Invalid Sharpness " + sharpness);
+
+            set(KEY_SHARPNESS, String.valueOf(sharpness));
+        }
+
+        /**
+         * Get Max Sharpness Level
+         *
+         * @return max sharpness level
+         */
+        public int getMaxSharpness(){
+            return getInt(KEY_MAX_SHARPNESS);
+        }
+
+        /**
+         * Get Contrast level
+         *
+         * @return contrast level
+         */
+        public int getContrast(){
+            return getInt(KEY_CONTRAST);
+        }
+
+        /**
+         * Set Contrast Level
+         *
+         * @param contrast level
+         */
+        public void setContrast(int contrast){
+            if((contrast < 0 ) || (contrast > getMaxContrast()))
+                throw new IllegalArgumentException(
+                        "Invalid Contrast " + contrast);
+
+            set(KEY_CONTRAST, String.valueOf(contrast));
+        }
+
+        /**
+         * Get Max Contrast Level
+         *
+         * @return max contrast level
+         */
+        public int getMaxContrast(){
+            return getInt(KEY_MAX_CONTRAST);
+        }
+
+        /**
+         * Get Saturation level
+         *
+         * @return saturation level
+         */
+        public int getSaturation(){
+            return getInt(KEY_SATURATION);
+        }
+
+        /**
+         * Set Saturation Level
+         *
+         * @param saturation level
+         */
+        public void setSaturation(int saturation){
+            if((saturation < 0 ) || (saturation > getMaxSaturation()))
+                throw new IllegalArgumentException(
+                        "Invalid Saturation " + saturation);
+
+            set(KEY_SATURATION, String.valueOf(saturation));
+        }
+
+        /**
+         * Get Max Saturation Level
+         *
+         * @return max contrast level
+         */
+        public int getMaxSaturation(){
+            return getInt(KEY_MAX_SATURATION);
+        }
 
         /**
          * Gets the current antibanding setting.
@@ -1797,6 +1990,95 @@ public class Camera {
         public boolean isSmoothZoomSupported() {
             String str = get(KEY_SMOOTH_ZOOM_SUPPORTED);
             return TRUE.equals(str);
+        }
+
+        /**
+         * Gets the current ISO setting.
+         *
+         * @return one of ISO_XXX string constant. null if ISO
+         *         setting is not supported.
+         */
+        public String getISOValue() {
+            return get(KEY_ISO_MODE);
+        }
+
+        /**
+         * Sets the ISO.
+         *
+         * @param iso ISO_XXX string constant.
+         */
+        public void setISOValue(String iso) {
+            set(KEY_ISO_MODE, iso);
+        }
+
+         /**
+         * Gets the supported ISO values.
+         *
+         * @return a List of FLASH_MODE_XXX string constants. null if flash mode
+         *         setting is not supported.
+         */
+        public List<String> getSupportedIsoValues() {
+            String str = get(KEY_ISO_MODE + SUPPORTED_VALUES_SUFFIX);
+            return split(str);
+        }
+
+         /**
+         * Gets the current LensShade Mode.
+         *
+         * @return LensShade Mode
+         */
+        public String getLensShade() {
+            return get(KEY_LENSSHADE);
+        }
+
+        /**
+         * Sets the current LensShade Mode.
+         *
+         * @return LensShade Mode
+         */
+        public void setLensShade(String lensshade) {
+            set(KEY_LENSSHADE, lensshade);
+        }
+
+         /**
+         * Gets the supported Lensshade modes.
+         *
+         * @return a List of LENS_MODE_XXX string constants. null if lens mode
+         *         setting is not supported.
+         */
+        public List<String> getSupportedLensShadeModes() {
+            String str = get(KEY_LENSSHADE + SUPPORTED_VALUES_SUFFIX);
+            return split(str);
+        }
+
+         /**
+         * Gets the current auto exposure setting.
+         *
+         * @return one of AUTO_EXPOSURE_XXX string constant. null if auto exposure
+         *         setting is not supported.
+         */
+        public String getAutoExposure() {
+            return get(KEY_AUTO_EXPOSURE);
+        }
+
+        /**
+         * Sets the current auto exposure setting.
+         *
+         * @param value AUTO_EXPOSURE_XXX string constants.
+         */
+        public void setAutoExposure(String value) {
+            set(KEY_AUTO_EXPOSURE, value);
+        }
+
+       /**
+         * Gets the supported auto exposure setting.
+         *
+         * @return a List of AUTO_EXPOSURE_XXX string constants. null if auto exposure
+         *         setting is not supported.
+         */
+        public List<String> getSupportedAutoexposure() {
+            String str = get(KEY_AUTO_EXPOSURE + SUPPORTED_VALUES_SUFFIX);
+            return split(str);
         }
 
         // Splits a comma delimited string to an ArrayList of String.

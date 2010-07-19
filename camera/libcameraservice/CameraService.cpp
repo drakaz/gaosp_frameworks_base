@@ -68,6 +68,16 @@ extern "C" {
 static int debug_frame_cnt;
 #endif
 
+struct camera_size_type {
+    int width;
+    int height;
+};
+
+static const camera_size_type preview_sizes[] = {
+    { 1280, 720 }, // 720P
+    { 768, 432 },
+};
+
 static int getCallingPid() {
     return IPCThreadState::self()->getCallingPid();
 }
@@ -556,6 +566,13 @@ status_t CameraService::Client::setOverlay()
     CameraParameters params(mHardware->getParameters());
     params.getPreviewSize(&w, &h);
 
+    //for 720p recording , preview can be 800X448
+    if(w == preview_sizes[0].width && h==preview_sizes[0].height){
+        LOGD("Changing overlay dimensions to 768X432 for 720p recording.");
+        w = preview_sizes[1].width;
+        h = preview_sizes[1].height;
+    }
+
     if ( w != mOverlayW || h != mOverlayH )
     {
         // Force the destruction of any previous overlay
@@ -606,6 +623,13 @@ status_t CameraService::Client::registerPreviewBuffers()
     int w, h;
     CameraParameters params(mHardware->getParameters());
     params.getPreviewSize(&w, &h);
+
+    //for 720p recording , preview can be 800X448
+    if(w ==  preview_sizes[0].width && h== preview_sizes[0].height){
+        LOGD("registerpreviewbufs :changing dimensions to 768X432 for 720p recording.");
+        w = preview_sizes[1].width;
+        h = preview_sizes[1].height;
+    }
 
     // don't use a hardcoded format here
     ISurface::BufferHeap buffers(w, h, w, h,
@@ -887,32 +911,39 @@ status_t CameraService::Client::takePicture()
 
 // snapshot taken
 void CameraService::Client::handleShutter(
-    image_rect_type *size // The width and height of yuv picture for
+    image_rect_type *size, // The width and height of yuv picture for
                           // registerBuffer. If this is NULL, use the picture
                           // size from parameters.
+   bool playShutterSoundOnly
 )
 {
     // Play shutter sound.
-    if (mMediaPlayerClick.get() != NULL) {
-        // do not play shutter sound if stream volume is 0
-        // (typically because ringer mode is silent).
-        int index;
-        AudioSystem::getStreamVolumeIndex(AudioSystem::ENFORCED_AUDIBLE, &index);
-        if (index != 0) {
-            mMediaPlayerClick->seekTo(0);
-            mMediaPlayerClick->start();
+
+    if(playShutterSoundOnly) {
+
+        if (mMediaPlayerClick.get() != NULL) {
+            // do not play shutter sound if stream volume is 0
+            // (typically because ringer mode is silent).
+            int index;
+            AudioSystem::getStreamVolumeIndex(AudioSystem::ENFORCED_AUDIBLE, &index);
+            if (index != 0) {
+                mMediaPlayerClick->seekTo(0);
+                mMediaPlayerClick->start();
+            }
         }
+        sp<ICameraClient> c = mCameraClient;
+        if (c != NULL) {
+            c->notifyCallback(CAMERA_MSG_SHUTTER, 0, 0);
+        }
+        return ;
     }
+
 
     // Screen goes black after the buffer is unregistered.
     if (mSurface != 0 && !mUseOverlay) {
         mSurface->unregisterBuffers();
     }
 
-    sp<ICameraClient> c = mCameraClient;
-    if (c != NULL) {
-        c->notifyCallback(CAMERA_MSG_SHUTTER, 0, 0);
-    }
     mHardware->disableMsgType(CAMERA_MSG_SHUTTER);
 
     // It takes some time before yuvPicture callback to be called.
@@ -929,6 +960,7 @@ void CameraService::Client::handleShutter(
             h &= ~1;
             LOGV("Snapshot image width=%d, height=%d", w, h);
         }
+
         // FIXME: don't use hardcoded format constants here
         ISurface::BufferHeap buffers(w, h, w, h,
             HAL_PIXEL_FORMAT_YCrCb_420_SP, mOrientation, 0,
@@ -1085,7 +1117,7 @@ void CameraService::Client::notifyCallback(int32_t msgType, int32_t ext1, int32_
     switch (msgType) {
         case CAMERA_MSG_SHUTTER:
             // ext1 is the dimension of the yuv picture.
-            client->handleShutter((image_rect_type *)ext1);
+            client->handleShutter((image_rect_type *)ext1, (bool)ext2);
             break;
         default:
             sp<ICameraClient> c = client->mCameraClient;
