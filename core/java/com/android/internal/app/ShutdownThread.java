@@ -58,7 +58,7 @@ public final class ShutdownThread extends Thread {
     private static Object sIsStartedGuard = new Object();
     private static boolean sIsStarted = false;
     
-    private static boolean mReboot;
+    private static boolean mReboot = false;
     private static String mRebootReason;
 
     // static instance of this thread
@@ -120,7 +120,11 @@ public final class ShutdownThread extends Thread {
                                 beginShutdownSequence(context);
                             }
                         })
-                        .setNegativeButton(com.android.internal.R.string.no, null)
+                        .setNegativeButton(com.android.internal.R.string.no, new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int which) {
+								sIsRecovery = false;
+							}
+						})
                         .create();
  	    } else if (mReboot) {
                 dialog = new AlertDialog.Builder(context)
@@ -132,7 +136,11 @@ public final class ShutdownThread extends Thread {
                                 beginShutdownSequence(context);
                             }
                         })
-                        .setNegativeButton(com.android.internal.R.string.no, null)
+                        .setNegativeButton(com.android.internal.R.string.no, new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int which) {
+								mReboot = false;
+							}
+						})
                         .create();
             } else {
                 dialog = new AlertDialog.Builder(context)
@@ -176,7 +184,6 @@ public final class ShutdownThread extends Thread {
     // drakaz : reboot recovery
     public static void RebootRecovery(final Context context, boolean confirm, final boolean reboot) {
        	sIsRecovery = true;
-	mReboot = true;
         mRebootReason = "recovery";
        	shutdown(context, confirm);
     }
