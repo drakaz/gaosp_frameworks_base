@@ -1,5 +1,5 @@
 /*
- ** Copyright 2008, HTC Inc.
+ ** Copyright 2008, The Android Open Source Project
  **
  ** Licensed under the Apache License, Version 2.0 (the "License");
  ** you may not use this file except in compliance with the License.
@@ -194,6 +194,16 @@ status_t MediaRecorderClient::setParameters(const String8& params) {
         return NO_INIT;
     }
     return mRecorder->setParameters(params);
+}
+
+status_t MediaRecorderClient::setCameraParameters(const String8& params) {
+    LOGV("setCameraParameters(%s)", params.string());
+    Mutex::Autolock lock(mLock);
+    if (mRecorder == NULL) {
+        LOGE("recorder is not initialized");
+        return NO_INIT;
+    }
+    return mRecorder->setCameraParameters(params);
 }
 
 status_t MediaRecorderClient::prepare()

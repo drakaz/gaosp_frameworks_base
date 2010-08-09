@@ -1728,6 +1728,18 @@ public final class Settings {
         public static final String SHOW_TWELVE_HOUR_CLOCK_PERIOD = "show_clock_period";
         
         /**
+         * How many ms to delay before enabling the screen lock when the screen goes off due to timeout
+         * @hide
+         */
+        public static final String SCREEN_LOCK_TIMEOUT_DELAY = "screen_lock_timeout_delay";
+        
+        /**
+         * How many ms to delay before enabling the screen lock when the screen is turned off by the user
+         * @hide
+         */
+        public static final String SCREEN_LOCK_SCREENOFF_DELAY = "screen_lock_screenoff_delay";
+        
+        /**
          * Whether the audible DTMF tones are played by the dialer when dialing. The value is
          * boolean (1 or 0).
          */
@@ -1955,13 +1967,55 @@ public final class Settings {
          * @hide
          */
         public static final String TRACKBALL_SCREEN_ON = "trackball_screen_on";
-        
+
+         /**
+          * Pulse notifications in Succession.  The value is boolean (1 or 0).
+          * @hide
+          */
+         public static final String TRACKBALL_NOTIFICATION_SUCCESSION = "trackball_sucession";
+
+         /**
+          * Pulse notifications in Succession.  The value is boolean (1 or 0).
+          * @hide
+          */
+         public static final String TRACKBALL_NOTIFICATION_RANDOM = "trackball_random_colors";
+
+         /**
+          * Pulse notifications in Succession.  The value is boolean (1 or 0).
+          * @hide
+          */
+         public static final String TRACKBALL_NOTIFICATION_PULSE_ORDER = "trackball_pulse_in_order";
+
+	/**
+          * Beldn Notification Colors.  The value is boolean (1 or 0).
+          * @hide
+          */
+         public static final String TRACKBALL_NOTIFICATION_BLEND_COLOR = "trackball_blend_color";
+
+        /**
+         * Trackball Notification Colors. The value is String  pkg=color|pkg=color
+         * @hide
+         */
+        public static final String NOTIFICATION_PACKAGE_COLORS = "|";
+
+        /**
+         * Trackball Notification List. The value is String  pkg|pkg
+         * @hide
+         */
+        public static final String NOTIFICATION_PACKAGE_LIST = "|";
+
+        /**
+         * Trackball Notification Colors Debugging. The value is boolean (1 or 0)
+         * @hide
+         */
+        public static final String NOTIFICATION_PACKAGE_COLORS_GET_PACK = "0";
+
         /**
          * Whether to unlock the menu key.  The value is boolean (1 or 0).
          * @hide
          */
         public static final String MENU_UNLOCK_SCREEN = "menu_unlock_screen";
-        
+
         /**
          * Color mask tp apply to notification bar when custom is set
          * @hide
@@ -1985,7 +2039,25 @@ public final class Settings {
          * @hide
          */
         public static final String LOCKSCREEN_ALWAYS_MUSIC_CONTROLS = "lockscreen_always_music_controls";
-        
+
+        /**
+         * Whether to use a custom pull-down notification screen
+         * @hide 
+         */
+        public static final String NOTIF_EXPANDED_BAR_COLOR = "notif_expanded_bar_color";
+
+        /**
+         * Color mask to apply to pull-down notification screen
+         * @hide
+         */
+        public static final String NOTIF_EXPANDED_BAR_CUSTOM = "notif_expanded_bar_custom";
+
+        /**
+         * Whether to keep the home app at a higher OOM adjustement
+         * @hide
+         */
+        public static final String LOCK_HOME_IN_MEMORY = "lock_home_in_memory";
+
         /**
          * Settings to backup. This is here so that it's in the same place as the settings
          * keys and easy to update.
@@ -2059,6 +2131,8 @@ public final class Settings {
             HAPTIC_TAP_ARRAY_DEFAULT,
             NOTIF_BAR_COLOR,
             NOTIF_BAR_CUSTOM,
+            NOTIF_EXPANDED_BAR_COLOR,
+            NOTIF_EXPANDED_BAR_CUSTOM
         };
 
         // Settings moved to Settings.Secure

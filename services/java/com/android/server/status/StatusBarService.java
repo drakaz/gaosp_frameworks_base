@@ -41,6 +41,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.os.SystemClock;
 import android.provider.Telephony;
+import android.util.Log;
 import android.util.Slog;
 import android.view.Display;
 import android.view.Gravity;
@@ -55,6 +56,7 @@ import android.view.WindowManager;
 import android.view.WindowManagerImpl;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RemoteViews;
 import android.widget.ScrollView;
@@ -71,7 +73,7 @@ import android.provider.Settings;
 import java.lang.reflect.Field;
 
 import android.graphics.PorterDuff.Mode;
-import android.widget.Toast;
+import android.graphics.drawable.StateListDrawable;
 
 
 /**
@@ -110,8 +112,6 @@ public class StatusBarService extends IStatusBar.Stub
     private static final int OP_EXPAND = 5;
     private static final int OP_TOGGLE = 6;
     private static final int OP_DISABLE = 7;
-    private static final int NOT_BAR_STOCK = 10;
-    private static final int NOT_BAR_CUSTOM = 11;
     
     private class PendingOp {
         IBinder key;
@@ -242,9 +242,16 @@ public class StatusBarService extends IStatusBar.Stub
     private int notificationTitleColor = blackColor;
     private int notificationTextColor = blackColor;
     private int notificationTimeColor = blackColor;
-    int notBarType = 0;
-    int colorMask;
-    Mode PDMode = Mode.SCREEN;
+    boolean custNotBar = false;
+    boolean custExpBar = false;
+    int notifBarColorMask;
+    int expBarColorMask;
+    Mode notifPDMode = Mode.SCREEN;
+    Mode expPDMode = Mode.SCREEN;
+    Drawable closerDrawable;
+    Drawable expBarBackDrawable;
+    Drawable expBarHeadDrawable;
+    Drawable expBarNotifTitleDrawable;
     
     
     // for disabling the status bar
@@ -293,18 +300,14 @@ public class StatusBarService extends IStatusBar.Stub
         }
         mStatusBarView = sb;
         mDateView = (DateView)sb.findViewById(R.id.date);
-        switch (notBarType) {
-            case NOT_BAR_STOCK:
-        	    break; // this is on startup, bgdrawable is already set thru xml layout;
-            case NOT_BAR_CUSTOM:
+       
+        if (custNotBar) {
         	    mStatusBarView.setBackgroundDrawable(res.getDrawable(com.android.internal.R.drawable.statusbar_background_sq,
-            	    colorMask, PDMode));
+                	    notifBarColorMask, notifPDMode));
         	    mDateView.setBackgroundDrawable(res.getDrawable(com.android.internal.R.drawable.statusbar_background_sq,
-            	    colorMask, PDMode));
-        	    break;
-            }
-        mStatusBarView.refreshDrawableState();
-        mDateView.refreshDrawableState();
+                	    notifBarColorMask, notifPDMode));
+        	    mDateView.setPadding(6, 0, 6, 0);
+        }
         
         mStatusIcons = (LinearLayout)sb.findViewById(R.id.statusIcons);
         mNotificationIcons = (IconMerger)sb.findViewById(R.id.notificationIcons);
@@ -327,7 +330,13 @@ public class StatusBarService extends IStatusBar.Stub
         mPlmnLabel = (TextView)expanded.findViewById(R.id.plmnLabel);
         mScrollView = (ScrollView)expanded.findViewById(R.id.scroll);
         mNotificationLinearLayout = expanded.findViewById(R.id.notificationLinearLayout);
-
+        if (custExpBar) {
+        	mExpandedView.findViewById(R.id.exp_view_lin_layout).
+        	        setBackgroundDrawable(expBarHeadDrawable);
+        	mNoNotificationsTitle.setBackgroundDrawable(expBarNotifTitleDrawable);
+        	mOngoingTitle.setBackgroundDrawable(expBarNotifTitleDrawable);
+        	mLatestTitle.setBackgroundDrawable(expBarNotifTitleDrawable);
+        }        
         mOngoingTitle.setVisibility(View.GONE);
         mLatestTitle.setVisibility(View.GONE);
         
@@ -340,8 +349,14 @@ public class StatusBarService extends IStatusBar.Stub
                 com.android.internal.R.layout.status_bar_tracking, null);
         mTrackingView.mService = this;
         mCloseView = (CloseDragHandle)mTrackingView.findViewById(R.id.close);
+        if (custExpBar) {
+        	ImageView iv = (ImageView)mTrackingView.findViewById(R.id.close_image);
+        	mCloseView.removeAllViews();
+        	iv.setImageDrawable(closerDrawable);
+        	iv.setColorFilter(expBarColorMask, expPDMode);
+            mCloseView.addView(iv);
+            }
         mCloseView.mService = this;
-
         mEdgeBorder = res.getDimensionPixelSize(R.dimen.status_bar_edge_ignore);
 
         // add the more icon for the notifications
@@ -867,7 +882,8 @@ public class StatusBarService extends IStatusBar.Stub
     };
     
     View makeNotificationView(StatusBarNotification notification, ViewGroup parent) {
-        NotificationData n = notification.data;
+    	Resources res = mContext.getResources();
+    	NotificationData n = notification.data;
         RemoteViews remoteViews = n.contentView;
         if (remoteViews == null) {
             return null;
@@ -877,9 +893,22 @@ public class StatusBarService extends IStatusBar.Stub
         LayoutInflater inflater = (LayoutInflater)mContext.getSystemService(
                 Context.LAYOUT_INFLATER_SERVICE);
         View row = inflater.inflate(com.android.internal.R.layout.status_bar_latest_event, parent, false);
-
-        // bind the click event to the content area
         ViewGroup content = (ViewGroup)row.findViewById(com.android.internal.R.id.content);
+        if (custExpBar) {
+            StateListDrawable sld = new StateListDrawable();
+            int stateFocused = android.R.attr.state_focused;
+            int statePressed = android.R.attr.state_pressed;
+            Drawable colornormal = res.getDrawable(com.android.internal.R.drawable.status_bar_item_background_normal_cust);
+            Drawable colorfocused = res.getDrawable(com.android.internal.R.drawable.status_bar_item_background_focus_cust);
+            Drawable colorpressed = res.getDrawable(com.android.internal.R.drawable.status_bar_item_background_pressed_cust);
+            sld.addState(new int[] {stateFocused}, colorfocused);
+            sld.addState(new int[] {statePressed}, colorpressed);
+            sld.addState(new int[] {}, colornormal);
+            sld.mutate();
+            sld.setColorFilter(expBarColorMask, expPDMode);
+            content.setBackgroundDrawable(sld);
+            
+        }
         content.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
         content.setOnFocusChangeListener(mFocusChangeListener);
         PendingIntent contentIntent = n.contentIntent;
@@ -900,19 +929,11 @@ public class StatusBarService extends IStatusBar.Stub
             return null;
         }
 
-        //Try-catch cause it does not work with QuickSettings, possibly other apps too :( (Won't work thru XML as well)
-        try {
-            TextView tv1 = (TextView) child.findViewById(com.android.internal.R.id.title);
-            TextView tv2 = (TextView) child.findViewById(com.android.internal.R.id.text);
-            TextView tv3 = (TextView) child.findViewById(com.android.internal.R.id.time);
-            tv1.setTextColor(notificationTitleColor);
-            tv2.setTextColor(notificationTextColor);
-            tv3.setTextColor(notificationTimeColor);
-        }
-        catch (Exception e) {
-        }
-  
-        content.addView(child);
+        // This will try to handle text color for all notifications from apps, applying the appropriate
+        // color if ID is possible, otherwise setting it to notification text color
+       	startRecurse(child);
+
+       	content.addView(child);
 
         row.setDrawingCacheEnabled(true);
 
@@ -922,6 +943,43 @@ public class StatusBarService extends IStatusBar.Stub
         return row;
     }
 
+    void startRecurse(View v) {
+    	ViewGroup vg = (ViewGroup) v;
+        int childcount = vg.getChildCount();
+        if (childcount > 0) {
+        	int i;
+        	for (i = 0; i < childcount; i++) {
+        		try {
+        		setViewColors((TextView) vg.getChildAt(i));
+        		} catch (Exception e) { }
+        		try {
+        		    startRecurse((View) vg.getChildAt(i));
+        		} catch (Exception e) { }
+        	}
+        }
+    }
+    
+    void setViewColors(TextView tv) {
+        int tvID = 0;
+        try {
+            tvID = tv.getId();
+            switch (tvID) {
+                case com.android.internal.R.id.title:
+        	        tv.setTextColor(notificationTitleColor);
+            	    break;
+                case com.android.internal.R.id.text:
+                	tv.setTextColor(notificationTextColor);
+        	        break;
+                case com.android.internal.R.id.time:
+                	tv.setTextColor(notificationTimeColor);
+                	break;
+                default:
+        	        tv.setTextColor(notificationTextColor);
+                }
+            } catch (Exception e) { }
+    }
+    
+    
     void addNotificationView(StatusBarNotification notification) {
         if (notification.view != null) {
             throw new RuntimeException("Assertion failed: notification.view="
@@ -1948,15 +2006,36 @@ public class StatusBarService extends IStatusBar.Stub
     }
     
     private void getNotBarConfig() {
-    	int ret[];
+    	Resources res = mContext.getResources();
+    	/*
+    	 * Setup color and bar type for notification strip
+    	 */
     	boolean useCustom = Settings.System.getInt(mContext.getContentResolver(),
        	        Settings.System.NOTIF_BAR_CUSTOM, 0) == 1;
-        colorMask = Settings.System.getInt(mContext.getContentResolver(),
+        notifBarColorMask = Settings.System.getInt(mContext.getContentResolver(),
                 Settings.System.NOTIF_BAR_COLOR, whiteColor);
-        if (!useCustom) {
-        	notBarType = NOT_BAR_STOCK;
+        if (useCustom) {
+          	custNotBar = true;
         } else {
-            notBarType = NOT_BAR_CUSTOM;
+        	custNotBar = false;
         }
+        /*
+         * Setup colors for expanded notification drawables
+        */
+        boolean useCustomExp = Settings.System.getInt(mContext.getContentResolver(),
+       	        Settings.System.NOTIF_EXPANDED_BAR_CUSTOM, 0) == 1;
+        expBarColorMask = Settings.System.getInt(mContext.getContentResolver(),
+                Settings.System.NOTIF_EXPANDED_BAR_COLOR, whiteColor);
+        int noalpha = expBarColorMask | 0xFF000000; 
+        if (useCustomExp) {
+        	closerDrawable = res.getDrawable(com.android.internal.R.drawable.status_bar_close_on_cust);
+            expBarHeadDrawable = res.getDrawable(com.android.internal.R.drawable.status_bar_header_background_cust,
+            		expBarColorMask, expPDMode);
+            expBarNotifTitleDrawable = res.getDrawable(com.android.internal.R.drawable.title_bar_portrait_cust,
+            		noalpha, expPDMode); // always solid
+            custExpBar = true;
+            } else {
+        	custExpBar = false;        	
+            }  
     }
 }
