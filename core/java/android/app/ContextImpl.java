@@ -387,7 +387,11 @@ class ContextImpl extends Context {
     private File getPreferencesDir() {
         synchronized (mSync) {
             if (mPreferencesDir == null) {
-                mPreferencesDir = new File(getDataDirFile(), "shared_prefs");
+                String FullPreferencesDirPath = "/dbdata/shared_prefs/" + getPackageName() + "/";
+                mPreferencesDir = new File(FullPreferencesDirPath);
+                if (!mPreferencesDir.exists()) {
+                    mPreferencesDir.mkdirs();
+                }
             }
             return mPreferencesDir;
         }
@@ -567,7 +571,12 @@ class ContextImpl extends Context {
     private File getDatabasesDir() {
         synchronized (mSync) {
             if (mDatabasesDir == null) {
-                mDatabasesDir = new File(getDataDirFile(), "databases");
+		String FullDatabasePath = "/dbdata/databases/" + getPackageName() + "/";
+                mDatabasesDir = new File(FullDatabasePath);
+		if (!mDatabasesDir.exists()) {
+                    mDatabasesDir.mkdirs();
+                }
+
             }
             if (mDatabasesDir.getPath().equals("databases")) {
                 mDatabasesDir = new File("/data/system");
