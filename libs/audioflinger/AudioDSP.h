@@ -68,6 +68,7 @@ class Biquad {
     void setBandPass(float cf, float sf, float resonance);
     void setLowShelf(float cf, float sf, float gain, float slope);
     void setHighShelf(float cf, float sf, float gain, float slope);
+    void setHighShelf1(float cf, float sf, float gain);
     void reset();
     int32_t process(int16_t x0);
 };
@@ -119,8 +120,6 @@ class EffectHeadphone : public Effect {
 
     Delay mReverbDelayL, mReverbDelayR;
     int32_t mDelayDataL, mDelayDataR;
-    Delay mDelayL, mDelayR;
-    Allpass mAllpassL[3], mAllpassR[3];
     Biquad mLowpassL, mLowpassR;
 
     public:

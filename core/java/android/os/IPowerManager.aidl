@@ -26,6 +26,7 @@ interface IPowerManager
     void releaseWakeLock(IBinder lock, int flags);
     void userActivity(long when, boolean noChangeLights);
     void userActivityWithForce(long when, boolean noChangeLights, boolean force);
+    void clearUserActivityTimeout(long now, long timeout);
     void setPokeLock(int pokey, IBinder lock, String tag);
     int getSupportedWakeLockFlags();
     void setStayOnSetting(int val);
@@ -38,4 +39,11 @@ interface IPowerManager
     // sets the brightness of the backlights (screen, keyboard, button) 0-255
     void setBacklightBrightness(int brightness);
     void setAttentionLight(boolean on, int color);
+
+    // custom backlight things
+    int getLightSensorValue();
+    int getRawLightSensorValue();
+    int getLightSensorScreenBrightness();
+    int getLightSensorButtonBrightness();
+    int getLightSensorKeyboardBrightness();
 }

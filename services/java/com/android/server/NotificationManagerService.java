@@ -860,19 +860,34 @@ class NotificationManagerService extends INotificationManager.Stub
 	    //updatePackageList(pkg);
             //Slog.i(TAG, "notification.lights="
             //        + ((old.notification.lights.flags & Notification.FLAG_SHOW_LIGHTS) != 0));
-            if ((notification.flags & Notification.FLAG_SHOW_LIGHTS) != 0) {
-                mLights.add(r);
+	    //if ((notification.flags & Notification.FLAG_SHOW_LIGHTS) != 0) {
+            if(checkLight(notification, pkg)) {
+	        mLights.add(r);
                 updateLightsLocked();
             } else {
-                if (old != null
-                        && ((old.notification.flags & Notification.FLAG_SHOW_LIGHTS) != 0)) {
-                    updateLightsLocked();
+		if (old != null) {
+			if(checkLight(old.notification, old.pkg))
+				updateLightsLocked();
                 }
             }
         }
 
         idOut[0] = id;
     }
+
+    private boolean checkLight(Notification notification, String pkg) {
+	String[] mPackage = findPackage(pkg);
+	boolean flashLight = true;
+	if(((notification.flags & Notification.FLAG_ONGOING_EVENT) != 0)
+	|| ((notification.flags & Notification.FLAG_FOREGROUND_SERVICE) != 0) ) {
+        	flashLight = false;
+        } else if(mPackage != null) {
+		if(mPackage[1].equals("none"))
+			flashLight = false;
+        }
+	return flashLight;
+   }
+
 
     private void sendAccessibilityEvent(Notification notification, CharSequence packageName) {
         AccessibilityManager manager = AccessibilityManager.getInstance(mContext);
@@ -1100,6 +1115,21 @@ class NotificationManagerService extends INotificationManager.Stub
 		return temp;
 	}
 
+        public String[] findPackage(String pkg) {
+                String mBaseString = Settings.System.getString(mContext.getContentResolver(), Settings.System.NOTIFICATION_PACKAGE_COLORS);
+                String[] mBaseArray = getArray(mBaseString);
+                for(int i = 0; i < mBaseArray.length; i++) {
+                        if(isNull(mBaseArray[i])) {
+                                continue;
+                        }
+                        if(mBaseArray[i].contains(pkg)) {
+                                return getPackageInfo(mBaseArray[i]);
+                        }
+                }
+                return null;
+        }
+
+
 	public class StartTimerClass implements Runnable {
 		private long sleepTimer;
 
@@ -1210,35 +1240,24 @@ class NotificationManagerService extends INotificationManager.Stub
                 	ledOnMS = mDefaultNotificationLedOn;
                 	ledOffMS = mDefaultNotificationLedOff;
             	}
-	    	//Possible Cleaner way?
-            	//String[] mPackageInfo = findPackage(mLedNotification.pkg);
-            	//if(mPackageInfo != null) {
-            	//		ledARGB = Color.parseColor(mPackageInfo[1]);
-    		//		ledOffMS = Integer.parseInt(mPackageInfo[2]);
-		//}
-            	if(mPackages != null) {
-            		int i = 0;
-            		for(i = 0; i < mPackages.length; i++) {
-            			String[] mPackageInfo = getPackageInfo(mPackages[i]);
-            			if(mPackageInfo == null) {
-            				continue;
-            			}
-            			if(mPackageInfo[0].matches(mLedNotification.pkg)) {
-            				if(mPackageInfo[1].equals("random")) {
-            					Random generator = new Random();
-            					int x = generator.nextInt(colorList.length - 1);
-               		 			ledARGB = Color.parseColor(colorList[x]);
-            				} else {
-            					ledARGB = Color.parseColor(mPackageInfo[1]);
-            				}
-            				if(mPackageInfo[2].equals(".5")) {
-			                        ledOffMS = 500;
-                			} else {
-						ledOffMS = (Integer.parseInt(mPackageInfo[2]) * 1000);
-       					}
-	    			}
-            		}
-            	}
+
+		String[] mPackageInfo = findPackage(mLedNotification.pkg);
+                if(mPackageInfo != null) {
+			if(!mPackageInfo[1].equals("none")) {
+				if(mPackageInfo[1].equals("random")) {
+					Random generator = new Random();
+					int x = generator.nextInt(colorList.length - 1);
+					ledARGB = Color.parseColor(colorList[x]);
+				} else {
+					ledARGB = Color.parseColor(mPackageInfo[1]);
+				}
+				if(mPackageInfo[2].equals(".5")) {
+					ledOffMS = 500;
+				} else {
+					ledOffMS = (Integer.parseInt(mPackageInfo[2]) * 1000);
+				}
+			}
+		}
 
           	if(mRandomColor == 1) {
 			//Lets make this intresting...
@@ -1252,12 +1271,13 @@ class NotificationManagerService extends INotificationManager.Stub
 			ledARGB = Color.parseColor(colorList[lastColor - 1]);
 			lastColor = lastColor + 1;
 		} else if(mBlendColor == 1) { // Blend lights: Credit to eshabtai for the application of this.
+			ledARGB = 0;
 			for (int n=0; n < mLights.size(); n++) {
 				int x = 0;
 				boolean found = false;
 				long pkgcolor = Color.parseColor("white");
 	                        for(x = 0; x < mPackages.length; x++) {
-	                                String[] mPackageInfo = getPackageInfo(mPackages[x]);
+	                                mPackageInfo = getPackageInfo(mPackages[x]);
         	                        if(mPackageInfo == null) {
                 	                        continue;
                         	        }
@@ -1275,9 +1295,12 @@ class NotificationManagerService extends INotificationManager.Stub
                         	}
                                 if(found) {
                                         ledARGB |= pkgcolor;
-                                } else {
+                                } else if ((mLights.get(n).notification.defaults & Notification.DEFAULT_LIGHTS) != 0) {
                                         ledARGB |= mLights.get(n).notification.ledARGB;
                                 }
+			}
+			if (ledARGB == 0) {
+				ledARGB = mDefaultNotificationColor;
 			}
 		}
             	if (mNotificationPulseEnabled) {

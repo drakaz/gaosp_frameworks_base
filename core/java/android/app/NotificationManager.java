@@ -108,7 +108,7 @@ public class NotificationManager
     		Log.d("WriteApps", "Error: " + e.toString() );
     	}
     }
-    
+
     /**
      * Persistent notification on the status bar,
      *
@@ -124,8 +124,9 @@ public class NotificationManager
         int[] idOut = new int[1];
         INotificationManager service = getService();
         String pkg = mContext.getPackageName();
-        if((notification.flags & Notification.FLAG_SHOW_LIGHTS) != 0) {
-        	updatePackageList();
+        if(((notification.flags & Notification.FLAG_ONGOING_EVENT) == 0)
+	|| ((notification.flags & Notification.FLAG_FOREGROUND_SERVICE) == 0)) {
+		updatePackageList();
         }
         if (localLOGV) Log.v(TAG, pkg + ": notify(" + id + ", " + notification + ")");
         try {

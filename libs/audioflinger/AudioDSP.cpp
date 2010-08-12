@@ -33,7 +33,6 @@ static int16_t toFixedPoint(float x)
     return int16_t(x * (1 << fixedPointDecimals) + 0.5f);
 }
 
-
 /***************************************************************************
  * Delay                                                                   *
  ***************************************************************************/
@@ -197,6 +196,19 @@ void Biquad::setHighShelf(float center_frequency, float sampling_frequency, floa
     setCoefficients(a0, a1, a2, b0, b1, b2);
 }
 
+void Biquad::setHighShelf1(float center_frequency, float sampling_frequency, float db_gain)
+{
+    float w0 = 2 * (float) M_PI * center_frequency / sampling_frequency;
+    float A = powf(10, db_gain/40);
+
+    float b0 = sinf(w0 / 2) + cosf(w0 / 2) * A;
+    float b1 = sinf(w0 / 2) - cosf(w0 / 2) * A;
+    float a0 = sinf(w0 / 2) + cosf(w0 / 2) / A;
+    float a1 = sinf(w0 / 2) - cosf(w0 / 2) / A;
+
+    setCoefficients(a0, a1, 0, b0, b1, 0);
+}
+
 void Biquad::setBandPass(float center_frequency, float sampling_frequency, float resonance)
 {
     float w0 = 2 * (float) M_PI * center_frequency / sampling_frequency;
@@ -282,7 +294,7 @@ EffectCompression::~EffectCompression()
 void EffectCompression::configure(const float samplingFrequency)
 {
     Effect::configure(samplingFrequency);
-    mWeighter.setBandPass(1000, samplingFrequency, sqrtf(2)/2);
+    mWeighter.setBandPass(1700, samplingFrequency, sqrtf(2)/2);
 }
 
 void EffectCompression::setRatio(float compressionRatio)
@@ -403,12 +415,6 @@ EffectHeadphone::~EffectHeadphone()
 {
     delete &mReverbDelayL;
     delete &mReverbDelayR;
-    delete &mDelayL;
-    delete &mDelayR;
-    for (int32_t i = 0; i < 3; i ++) {
-        delete &mAllpassL[i];
-        delete &mAllpassR[i];
-    }
     delete &mLowpassL;
     delete &mLowpassR;
 }
@@ -418,16 +424,12 @@ void EffectHeadphone::configure(const float samplingFrequency) {
 
     mReverbDelayL.setParameters(mSamplingFrequency, 0.030f);
     mReverbDelayR.setParameters(mSamplingFrequency, 0.030f);
-    mDelayL.setParameters(mSamplingFrequency, 0.00045f);
-    mDelayR.setParameters(mSamplingFrequency, 0.00045f);
-    mAllpassL[0].setParameters(mSamplingFrequency, 0.4f, 0.00031f);
-    mAllpassR[0].setParameters(mSamplingFrequency, 0.4f, 0.00031f);
-    mAllpassL[1].setParameters(mSamplingFrequency, 0.4f, 0.00021f);
-    mAllpassR[1].setParameters(mSamplingFrequency, 0.4f, 0.00021f);
-    mAllpassL[2].setParameters(mSamplingFrequency, 0.4f, 0.00011f);
-    mAllpassR[2].setParameters(mSamplingFrequency, 0.4f, 0.00011f);
-    mLowpassL.setRC(4000.0f, mSamplingFrequency);
-    mLowpassR.setRC(4000.0f, mSamplingFrequency);
+    /* the -3 dB point is around 700 Hz, similar to the classic design
+     * in bs2b. */
+    mLowpassL.setHighShelf1(1500.0f, mSamplingFrequency, -16.0f);
+    mLowpassR.setHighShelf1(1500.0f, mSamplingFrequency, -16.0f);
+    /* Rockbox has a 0.3 ms delay line (13 samples at 44100 Hz), but
+     * I think it makes the whole effect sound pretty bad so I skipped it! */
 }
 
 void EffectHeadphone::setDeep(bool deep)
@@ -479,26 +481,14 @@ void EffectHeadphone::process(int32_t* inout, int32_t frames)
         dataL += dryL;
         dataR += dryR;
 
-        /* Add fixed ear-to-ear propagation delay of about 10 cm, based
-         * on the idea that ear-to-ear distance is 30 cm and the speakers
-         * are placed in front of the listener, which means that the actual
-         * time delay will be somewhat less than the maximum. */
-        dataL = mDelayL.process(dataL);
-        dataR = mDelayR.process(dataR);
-        for (int32_t j = 0; j < 3; j ++) {
-            /* Confuse phase, simulating shoulder echoes and whatnot. */
-            dataL = mAllpassL[j].process(dataL);
-            dataR = mAllpassR[j].process(dataR);
-        }
-
         /* Lowpass filter to estimate head shadow. */
         dataL = mLowpassL.process(dataL >> fixedPointDecimals);
         dataR = mLowpassR.process(dataR >> fixedPointDecimals);
         /* 28 bits */
         
         /* Mix right-to-left and vice versa. */
-        inout[0] += dataR;
-        inout[1] += dataL;
+        inout[0] += dataR >> 1;
+        inout[1] += dataL >> 1;
         inout += 2;
     }
 }

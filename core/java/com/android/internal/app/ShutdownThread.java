@@ -133,6 +133,7 @@ public final class ShutdownThread extends Thread {
                         .setMessage(MessageReboot)
                         .setPositiveButton(com.android.internal.R.string.yes, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
+                               mReboot = true;
                                 beginShutdownSequence(context);
                             }
                         })
@@ -151,18 +152,19 @@ public final class ShutdownThread extends Thread {
                             public void onClick(DialogInterface dialog, int which) {
                                 beginShutdownSequence(context);
                             }
-				})
-				.setNegativeButton(com.android.internal.R.string.no, null)
-				.create();
-		    }
-		    dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG);
-		    if (!context.getResources().getBoolean(
-			    com.android.internal.R.bool.config_sf_slowBlur)) {
-			dialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND);
-		    }
-		    dialog.show();
-		} else {
-		    beginShutdownSequence(context);
+                        })
+                        .setNegativeButton(com.android.internal.R.string.no, null)
+                        .create();
+            }
+            dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG);
+            if (!context.getResources().getBoolean(
+                    com.android.internal.R.bool.config_sf_slowBlur)) {
+                dialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND);
+            }
+            dialog.show();
+           mReboot = false;
+        } else {
+            beginShutdownSequence(context);
         }
     }
 
