@@ -622,7 +622,7 @@ status_t CameraService::Client::registerPreviewBuffers()
     int w, h;
     CameraParameters params(mHardware->getParameters());
     params.getPreviewSize(&w, &h);
-
+LOGD("CameraService::Client::registerPreviewBuffers") ;
     //for 720p recording , preview can be 800X448
     if(w ==  preview_sizes[0].width && h== preview_sizes[0].height){
         LOGD("registerpreviewbufs :changing dimensions to 768X432 for 720p recording.");
@@ -635,8 +635,13 @@ status_t CameraService::Client::registerPreviewBuffers()
                                  HAL_PIXEL_FORMAT_YCrCb_420_SP,
                                  mOrientation,
                                  0,
-                                 mHardware->getPreviewHeap());
-
+                                 mHardware->getPreviewHeap(0),
+				 mHardware->getPreviewHeap(1),
+				 mHardware->getPreviewHeap(2),
+				 mHardware->getPreviewHeap(3));
+    for( int i = 0 ; i < 4 ; i++ ) {
+      mHeapBase[i] = mHardware->getPreviewHeap(i)->base() ;				 
+    }
     status_t ret = mSurface->registerBuffers(buffers);
     if (ret != NO_ERROR) {
         LOGE("registerBuffers failed with status %d", ret);
@@ -960,6 +965,8 @@ void CameraService::Client::handleShutter(
             LOGV("Snapshot image width=%d, height=%d", w, h);
         }
 
+LOGD("Snapshot image width=%d, height=%d", w, h);
+
         // FIXME: don't use hardcoded format constants here
         ISurface::BufferHeap buffers(w, h, w, h,
             HAL_PIXEL_FORMAT_YCrCb_420_SP, mOrientation, 0,
@@ -976,7 +983,14 @@ void CameraService::Client::handlePreviewData(const sp<IMemory>& mem)
     ssize_t offset;
     size_t size;
     sp<IMemoryHeap> heap = mem->getMemory(&offset, &size);
-
+   
+    // Locate buffer index
+    for( int i = 0 ; i < 4 ; i++ ) {
+      if( mHeapBase[i] == heap->base() ) {
+	  offset = i ;
+      }
+    }
+    
 #if DEBUG_HEAP_LEAKS && 0 // debugging
     if (gWeakHeap == NULL) {
         if (gWeakHeap != heap) {

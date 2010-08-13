@@ -196,6 +196,7 @@ private:
                     sp<OverlayRef>              mOverlayRef;
                     int                         mOverlayW;
                     int                         mOverlayH;
+		    void *			mHeapBase[4] ;
 
         mutable     Mutex                       mPreviewLock;
                     sp<MemoryHeapBase>          mPreviewBuffer;
