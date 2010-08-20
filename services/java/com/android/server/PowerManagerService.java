@@ -48,7 +48,6 @@ import android.os.Power;
 import android.os.PowerManager;
 import android.os.Process;
 import android.os.RemoteException;
-import android.os.ServiceManager;
 import android.os.SystemClock;
 import android.provider.Settings.SettingNotFoundException;
 import android.provider.Settings;
@@ -64,8 +63,9 @@ import static android.provider.Settings.System.SCREEN_OFF_TIMEOUT;
 import static android.provider.Settings.System.STAY_ON_WHILE_PLUGGED_IN;
 
 import java.io.FileDescriptor;
-import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.FileWriter;
+import java.io.BufferedWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Observable;
@@ -96,9 +96,6 @@ class PowerManagerService extends IPowerManager.Stub
     private static final int MEDIUM_KEYLIGHT_DELAY = 15000;       // t+15 sec
     private static final int LONG_KEYLIGHT_DELAY = 6000;        // t+6 sec
     private static final int LONG_DIM_TIME = 7000;              // t+N-5 sec
-
-    // How long to wait to debounce light sensor changes.
-    private static final int LIGHT_SENSOR_DELAY = 2000;
 
     // For debouncing the proximity sensor.
     private static final int PROXIMITY_SENSOR_DELAY = 1000;
@@ -211,8 +208,6 @@ class PowerManagerService extends IPowerManager.Stub
     private BatteryService mBatteryService;
     private SensorManager mSensorManager;
     private Sensor mProximitySensor;
-    private Sensor mLightSensor;
-    private boolean mLightSensorEnabled;
     private float mLightSensorValue = -1;
     private int mHighestLightSensorValue = -1;
     private float mLightSensorPendingValue = -1;
@@ -276,7 +271,7 @@ class PowerManagerService extends IPowerManager.Stub
 
     // could be either static or controllable at runtime
     private static final boolean mSpew = false;
-    private static final boolean mDebugProximitySensor = (true || mSpew);
+    private static final boolean mDebugProximitySensor = (false || mSpew);
     private static final boolean mDebugLightSensor = (false || mSpew);
 
     /*
@@ -1007,7 +1002,6 @@ class PowerManagerService extends IPowerManager.Stub
             pw.println("  mProximitySensorActive=" + mProximitySensorActive);
             pw.println("  mProximityPendingValue=" + mProximityPendingValue);
             pw.println("  mLastProximityEventTime=" + mLastProximityEventTime);
-            pw.println("  mLightSensorEnabled=" + mLightSensorEnabled);
             pw.println("  mLightSensorValue=" + mLightSensorValue
                     + " mLightSensorPendingValue=" + mLightSensorPendingValue);
             pw.println("  mLightSensorScreenBrightness=" + mLightSensorScreenBrightness
@@ -1474,7 +1468,7 @@ class PowerManagerService extends IPowerManager.Stub
         if (err == 0) {
             mLastScreenOnTime = (on ? SystemClock.elapsedRealtime() : 0);
             if (mUseSoftwareAutoBrightness) {
-                enableLightSensor(on);
+            	SwitchLightSensor(on);
                 if (!on) {
                     // make sure button and key backlights are off too
                     mButtonLight.turnOff();
@@ -2597,17 +2591,11 @@ class PowerManagerService extends IPowerManager.Stub
         if (mUseSoftwareAutoBrightness && mAutoBrightessEnabled != enabled) {
             mAutoBrightessEnabled = enabled;
             if (isScreenOn()) {
-                // force recompute of backlight values
-                if (mLightSensorValue >= 0) {
-                    int value = (int)mLightSensorValue;
-                    mLightSensorValue = -1;
-                    resetLastLightValues();
-                    lightSensorChangedLocked(value);
-                }
-                lightFilterReset((int)mLightSensorValue);
-                if (!enabled) {
-                    lightFilterStop();
-                }
+            	if (enabled) {
+            		SwitchLightSensor(true);
+            	} else {
+            		SwitchLightSensor(false);
+            	}
             }
         }
     }
@@ -2880,8 +2868,7 @@ class PowerManagerService extends IPowerManager.Stub
         mProximitySensor = mSensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
         // don't bother with the light sensor if auto brightness is handled in hardware
         if (mUseSoftwareAutoBrightness) {
-            mLightSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
-            enableLightSensor(true);
+            SwitchLightSensor(true);
         }
 
         // wait until sensors are enabled before turning on screen.
@@ -3043,30 +3030,60 @@ class PowerManagerService extends IPowerManager.Stub
         }
     }
 
-    private void enableLightSensor(boolean enable) {
-        if (mDebugLightSensor) {
-            Slog.d(TAG, "enableLightSensor " + enable);
-        }
-        if (mSensorManager != null && mLightSensorEnabled != enable) {
-            mLightSensorEnabled = enable;
+    // drakaz : new method to switch hardware light sensor on I7500
+    private void SwitchLightSensor(boolean enable) {  
+    	    int AutomaticMode = mSettings.getValues(SCREEN_BRIGHTNESS_MODE).getAsInteger(Settings.System.VALUE);
             // clear calling identity so sensor manager battery stats are accurate
             long identity = Binder.clearCallingIdentity();
             try {
-                if (enable) {
-                    mSensorManager.registerListener(mLightListener, mLightSensor,
-                            SensorManager.SENSOR_DELAY_NORMAL);
+            	// Do we want to enable or disable the sensor ? What about the checkbox for automatic mode ?
+                if (enable && AutomaticMode == 1) {
+                    if (mDebugLightSensor) {
+                        Slog.d(TAG, "enableLightSensor " + enable);
+                    }
+                    // Enable hard sensor
+                	enableI7500HardLightSensor();
+                	mAutoBrightessEnabled = true;
                 } else {
+                    if (mDebugLightSensor) {
+                        Slog.d(TAG, "enableLightSensor " + enable);
+                    }
                     lightFilterStop();
-                    mSensorManager.unregisterListener(mLightListener);
+                    // Disable hard sensor
+                    disableI7500HardLightSensor();
                     mHandler.removeCallbacks(mAutoBrightnessTask);
+                    mAutoBrightessEnabled = false;
+            		setScreenBrightnessOverride(mSettings.getValues(SCREEN_BRIGHTNESS).getAsInteger(Settings.System.VALUE));
                 }
             } finally {
                 Binder.restoreCallingIdentity(identity);
             }
         }
-    }
 
-    SensorEventListener mProximityListener = new SensorEventListener() {
+ // drakaz : methods to enable/disable Samsung I7500 hardware light sensor
+    private void enableI7500HardLightSensor() {
+  	  try{
+            FileWriter fstream = new FileWriter("/sys/devices/virtual/lightsensor/switch_cmd/lightsensor_file_cmd",true);
+            BufferedWriter out = new BufferedWriter(fstream);
+            out.write("1");
+            out.close();
+        } catch (Exception e){
+        Slog.d(TAG, "Error when enabling lightsensor " + e.getMessage());
+        }	
+	}
+    
+    private void disableI7500HardLightSensor() {
+		try{
+	        FileWriter fstream = new FileWriter("/sys/devices/virtual/lightsensor/switch_cmd/lightsensor_file_cmd",true);
+	        BufferedWriter out = new BufferedWriter(fstream);
+	        out.write("0");
+	        out.close();
+	    } catch (Exception e){
+	    Slog.d(TAG, "Error when disabling lightsensor " + e.getMessage());
+	    }		
+	}
+
+	SensorEventListener mProximityListener = new SensorEventListener() {
        public void onSensorChanged(SensorEvent event) {
             long milliseconds = SystemClock.elapsedRealtime();
             synchronized (mLocks) {
@@ -3110,74 +3127,6 @@ class PowerManagerService extends IPowerManager.Stub
                     mProximityPartialLock.acquire();
                 } else if (held && !proximityTaskQueued) {
                     mProximityPartialLock.release();
-                }
-            }
-        }
-
-        public void onAccuracyChanged(Sensor sensor, int accuracy) {
-            // ignore
-        }
-    };
-
-    SensorEventListener mLightListener = new SensorEventListener() {
-        public void onSensorChanged(SensorEvent event) {
-            synchronized (mLocks) {
-                // ignore light sensor while screen is turning off
-                if (isScreenTurningOffLocked()) {
-                    return;
-                }
-
-                int value = (int)event.values[0];
-                long milliseconds = SystemClock.elapsedRealtime();
-                if (mDebugLightSensor) {
-                    Slog.d(TAG, "onSensorChanged: light value: " + value);
-                }
-                mHandler.removeCallbacks(mAutoBrightnessTask);
-                mLightFilterSample = value;
-                if (mAutoBrightessEnabled && mLightFilterEnabled) {
-                    if (mLightFilterRunning && mLightSensorValue != -1) {
-                        // Large changes -> quick response
-                        int diff = Math.abs((int)mLightSensorValue - value);
-                        if (diff > mLightFilterReset) {
-                            if (mDebugLightSensor) {
-                                Slog.d(TAGF, "reset cause: " + value +
-                                        " " + mLightSensorValue + " " + diff);
-                            }
-                            lightFilterReset(-1);
-                        }
-                        if (mDebugLightSensor) {
-                            Slog.d(TAGF, "sample: " + value);
-                        }
-                    } else {
-                        if (mLightSensorValue == -1 ||
-                                milliseconds < mLastScreenOnTime + mLightSensorWarmupTime) {
-                            // process the value immediately if screen has just turned on
-                            lightFilterReset(-1);
-                            lightSensorChangedLocked(value);
-                        }
-                        if (!mLightFilterRunning) {
-                            if (mDebugLightSensor) {
-                                Slog.d(TAGF, "start: " + value);
-                            }
-                            mLightFilterRunning = true;
-                            mHandler.postDelayed(mLightFilterTask, LIGHT_SENSOR_DELAY);
-                        }
-                    }
-                    return;
-                }
-
-                if (mLightSensorValue != value) {
-                    if (mLightSensorValue == -1 ||
-                            milliseconds < mLastScreenOnTime + mLightSensorWarmupTime) {
-                        // process the value immediately if screen has just turned on
-                        lightSensorChangedLocked(value);
-                    } else {
-                        // delay processing to debounce the sensor
-                        mLightSensorPendingValue = value;
-                        mHandler.postDelayed(mAutoBrightnessTask, LIGHT_SENSOR_DELAY);
-                    }
-                } else {
-                    mLightSensorPendingValue = -1;
                 }
             }
         }
