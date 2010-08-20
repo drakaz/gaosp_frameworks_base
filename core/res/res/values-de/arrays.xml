@@ -1,8 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?>
 <!--
-/* //device/apps/common/res/drawable/ic_popup_sync.xml
+/* //device/apps/common/assets/res/any/colors.xml
 **
-** Copyright 2008, The Android Open Source Project
+** Copyright 2006, The Android Open Source Project
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -17,11 +16,12 @@
 ** limitations under the License.
 */
 -->
-<animation-list
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        android:oneshot="false">
-    <item android:drawable="@drawable/progressbar_indeterminate1" android:duration="50" />
-    <item android:drawable="@drawable/progressbar_indeterminate2" android:duration="50" />
-    <item android:drawable="@drawable/progressbar_indeterminate3" android:duration="50" />
-</animation-list>
+<resources>
 
+<!-- Defines the shutdown options shown in the reboot dialog. -->
+<array name="shutdown_reboot_options">
+  <item>Neu starten</item>
+  <item>Recovery</item>
+  <item>Bootloader</item>
+</array>
+</resources>
