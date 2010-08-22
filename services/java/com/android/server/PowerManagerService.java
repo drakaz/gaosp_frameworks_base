@@ -3053,7 +3053,13 @@ class PowerManagerService extends IPowerManager.Stub
                     disableI7500HardLightSensor();
                     mHandler.removeCallbacks(mAutoBrightnessTask);
                     mAutoBrightessEnabled = false;
-            		setScreenBrightnessOverride(mSettings.getValues(SCREEN_BRIGHTNESS).getAsInteger(Settings.System.VALUE));
+	            int BrightnessOverrideValue;
+ 		    try {
+		    	BrightnessOverrideValue = mSettings.getValues(SCREEN_BRIGHTNESS).getAsInteger(Settings.System.VALUE);
+		    } catch (Exception e) {
+		        BrightnessOverrideValue = 255;	
+		    }		    
+	            setScreenBrightnessOverride(BrightnessOverrideValue);
                 }
             } finally {
                 Binder.restoreCallingIdentity(identity);
