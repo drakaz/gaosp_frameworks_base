@@ -41,7 +41,6 @@ import com.android.internal.telephony.ITelephony;
 import android.util.Log;
 import android.view.WindowManager;
 
-
 public final class ShutdownThread extends Thread {
     // constants
     private static final String TAG = "ShutdownThread";
@@ -58,14 +57,11 @@ public final class ShutdownThread extends Thread {
     private static Object sIsStartedGuard = new Object();
     private static boolean sIsStarted = false;
     
-    private static boolean mReboot = false;
+    private static boolean mReboot;
     private static String mRebootReason;
 
     // static instance of this thread
     private static final ShutdownThread sInstance = new ShutdownThread();
-
-    // drakaz : reboot recovery variable
-    private static boolean sIsRecovery = false;
     
     private final Object mActionDoneSync = new Object();
     private boolean mActionDone;
@@ -88,8 +84,6 @@ public final class ShutdownThread extends Thread {
     public static void shutdown(final Context context, boolean confirm) {
         // ensure that only one thread is trying to power down.
         // any additional calls are just returned
-        // drakaz : reboot recovery
-	int MessageReboot;    
         synchronized (sIsStartedGuard){
             if (sIsStarted) {
                 Log.d(TAG, "Request to shutdown already running, returning.");
@@ -99,34 +93,10 @@ public final class ShutdownThread extends Thread {
 
         Log.d(TAG, "Notifying thread to start radio shutdown");
 
-	if (sIsRecovery) {
-		MessageReboot = com.android.internal.R.string.reboot_recovery_confirm;
-	} else if (mReboot) {
-		MessageReboot = com.android.internal.R.string.reboot_confirm;
-	} else {
-		MessageReboot = (com.android.internal.R.string.shutdown_confirm);
-	}	
-        
         if (confirm) {
             final AlertDialog dialog;
             // Set different dialog message based on whether or not we're rebooting
-            if (sIsRecovery) {
-		dialog = new AlertDialog.Builder(context)
-                        .setIcon(android.R.drawable.ic_dialog_alert)
-                        .setTitle(com.android.internal.R.string.global_action_reboot_recovery)
-                        .setMessage(MessageReboot)
-                        .setPositiveButton(com.android.internal.R.string.yes, new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int which) {
-                                beginShutdownSequence(context);
-                            }
-                        })
-                        .setNegativeButton(com.android.internal.R.string.no, new DialogInterface.OnClickListener() {
-							public void onClick(DialogInterface dialog, int which) {
-								sIsRecovery = false;
-							}
-						})
-                        .create();
- 	    } else if (mReboot) {
+            if (mReboot) {
                 dialog = new AlertDialog.Builder(context)
                         .setIcon(android.R.drawable.ic_dialog_alert)
                         .setTitle(com.android.internal.R.string.reboot_system)
@@ -147,11 +117,7 @@ public final class ShutdownThread extends Thread {
                                 beginShutdownSequence(context);
                             }
                         })
-                        .setNegativeButton(com.android.internal.R.string.no, new DialogInterface.OnClickListener() {
-							public void onClick(DialogInterface dialog, int which) {
-								mReboot = false;
-							}
-						})
+                        .setNegativeButton(com.android.internal.R.string.no, null)
                         .create();
             } else {
                 dialog = new AlertDialog.Builder(context)
@@ -192,14 +158,6 @@ public final class ShutdownThread extends Thread {
         mRebootReason = reason;
         shutdown(context, confirm);
     }
-    
-    // drakaz : reboot recovery
-    public static void RebootRecovery(final Context context, boolean confirm, final boolean reboot) {
-       	sIsRecovery = true;
-        mRebootReason = "recovery";
-       	shutdown(context, confirm);
-    }
-
 
     private static void beginShutdownSequence(Context context) {
         synchronized (sIsStartedGuard) {
@@ -211,12 +169,7 @@ public final class ShutdownThread extends Thread {
         ProgressDialog pd = new ProgressDialog(context);
         if (mReboot) {
             pd.setTitle(context.getText(com.android.internal.R.string.reboot_system));
-            // drakaz : reboot recovery
-            if (sIsRecovery) {
-		pd.setMessage(context.getText(com.android.internal.R.string.reboot_progress_recovery));
-	    } else {
-	    	pd.setMessage(context.getText(com.android.internal.R.string.reboot_progress));
-	    }
+            pd.setMessage(context.getText(com.android.internal.R.string.reboot_progress));
         } else {
             pd.setTitle(context.getText(com.android.internal.R.string.power_off));
             pd.setMessage(context.getText(com.android.internal.R.string.shutdown_progress));
@@ -401,15 +354,10 @@ public final class ShutdownThread extends Thread {
             }
         }
 
-        if ((mReboot) || (sIsRecovery)) {
+        if (mReboot) {
             Log.i(TAG, "Rebooting, reason: " + mRebootReason);
             try {
-            	// drakaz : reboot recovery
-		if (sIsRecovery) {
-			Power.RebootRecovery(mRebootReason);
-		} else {
-			Power.reboot(mRebootReason);
-		}
+                Power.reboot(mRebootReason);
             } catch (Exception e) {
                 Log.e(TAG, "Reboot failed, will attempt shutdown instead", e);
             }
@@ -424,10 +372,9 @@ public final class ShutdownThread extends Thread {
             }
         }
 
-	if (!sIsRecovery) {
-        	// Shutdown power
-        	Log.i(TAG, "Performing low-level shutdown...");
-        	Power.shutdown();
-	}
+        // Shutdown power
+        Log.i(TAG, "Performing low-level shutdown...");
+        Power.shutdown();
     }
 }
+
