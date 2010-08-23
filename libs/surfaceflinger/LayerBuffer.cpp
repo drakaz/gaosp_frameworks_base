@@ -445,7 +445,6 @@ void LayerBuffer::BufferSource::postBuffer(ssize_t offset)
                     return;
                 }
             }
-        LOGD("postBuffer 2") ;
     }
 
     sp<Buffer> buffer;
