@@ -930,7 +930,6 @@ public class GpsLocationProvider implements LocationProviderInterface {
     private void startNavigating() {
         if (!mStarted) {
             if (DEBUG) Log.d(TAG, "startNavigating");
-
             mStarted = true;
             int positionMode;
             if (Settings.Secure.getInt(mContext.getContentResolver(),
@@ -1097,55 +1096,51 @@ public class GpsLocationProvider implements LocationProviderInterface {
             }
 
             // beware, the events can come out of order
-            mNavigating = (status == GPS_STATUS_ENGINE_ON);
-    
-            if (wasNavigating == mNavigating) {
-                return;
-            }
-            
-            if (mNavigating) {
+            if ((mNavigating || mEngineOn) && !mWakeLock.isHeld()) {
                 if (DEBUG) Log.d(TAG, "Acquiring wakelock");
                  mWakeLock.acquire();
             }
-        
-            int size = mListeners.size();
-            for (int i = 0; i < size; i++) {
-                Listener listener = mListeners.get(i);
+
+            if (wasNavigating != mNavigating) {
+                int size = mListeners.size();
+                for (int i = 0; i < size; i++) {
+                    Listener listener = mListeners.get(i);
+                    try {
+                        if (mNavigating) {
+                            listener.mListener.onGpsStarted();
+                        } else {
+                            listener.mListener.onGpsStopped();
+                        }
+                    } catch (RemoteException e) {
+                        Log.w(TAG, "RemoteException in reportStatus");
+                        mListeners.remove(listener);
+                        // adjust for size of list changing
+                        size--;
+                    }
+                }
 
                 try {
-                    if (mNavigating) {
-                        listener.mListener.onGpsStarted(); 
-                    } else {
-                        listener.mListener.onGpsStopped(); 
+                    // update battery stats
+                    for (int i=mClientUids.size() - 1; i >= 0; i--) {
+                        int uid = mClientUids.keyAt(i);
+                        if (mNavigating) {
+                            mBatteryStats.noteStartGps(uid);
+                        } else {
+                            mBatteryStats.noteStopGps(uid);
+                        }
                     }
                 } catch (RemoteException e) {
                     Log.w(TAG, "RemoteException in reportStatus");
-                    mListeners.remove(listener);
-                    // adjust for size of list changing
-                    size--;
                 }
-            }
-            try {
-                // update battery stats
-                for (int i=mClientUids.size() - 1; i >= 0; i--) {
-                    int uid = mClientUids.keyAt(i);
-                    if (mNavigating) {
-                        mBatteryStats.noteStartGps(uid);
-                    } else {
-                        mBatteryStats.noteStopGps(uid);
-                    }
-                }
-            } catch (RemoteException e) {
-                Log.w(TAG, "RemoteException in reportStatus");
+
+                // send an intent to notify that the GPS has been enabled or disabled.
+                Intent intent = new Intent(GPS_ENABLED_CHANGE_ACTION);
+                intent.putExtra(EXTRA_ENABLED, mNavigating);
+                mContext.sendBroadcast(intent);
             }
 
             // beware, the events can come out of order
-            // send an intent to notify that the GPS has been enabled or disabled.
-            Intent intent = new Intent(GPS_ENABLED_CHANGE_ACTION);
-            intent.putExtra(EXTRA_ENABLED, mNavigating);
-            mContext.sendBroadcast(intent);
-
-            if (!mNavigating) {
+            if (!mNavigating && !mEngineOn && mWakeLock.isHeld()) {
                 if (DEBUG) Log.d(TAG, "Releasing wakelock");
                 mWakeLock.release();
             }
@@ -1463,6 +1458,8 @@ public class GpsLocationProvider implements LocationProviderInterface {
     private float mSvAzimuths[] = new float[MAX_SVS];
     private int mSvMasks[] = new int[3];
     private int mSvCount;
+    // preallocated to avoid memory allocation in reportNmea()
+    private byte[] mNmeaBuffer = new byte[120];
 
     static { class_init_native(); }
     private static native void class_init_native();
