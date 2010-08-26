@@ -268,9 +268,10 @@ public abstract class IccPhoneBookInterfaceManager extends IIccPhoneBook.Stub {
     private int updateEfForIccType(int efid) {
         // Check if we are trying to read ADN records
         if (efid == IccConstants.EF_ADN) {
-            if (phone.getIccCard().isApplicationOnIcc(IccCardApplication.AppType.APPTYPE_USIM)) {
+           // Samsung Galaxy I7500 use USIM, but the baseband doesn't understand this new PBR code. Force the old one (ADN)
+            /*if (phone.getIccCard().isApplicationOnIcc(IccCardApplication.AppType.APPTYPE_USIM)) {
                 return IccConstants.EF_PBR;
-            }
+            }*/
         }
         return efid;
     }
