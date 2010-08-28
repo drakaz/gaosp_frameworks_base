@@ -1030,6 +1030,7 @@ class MountService extends IMountService.Stub
         // This is a semicolon delimited list of paths. Such as "/emmc;/foo", etc.
         ArrayList<String> volumesToMount = new ArrayList<String>();
         volumesToMount.add(Environment.getExternalStorageDirectory().getPath());
+        volumesToMount.add(Environment.getExternalSdDirectory().getPath());
         String additionalVolumesProperty = SystemProperties.get("ro.additionalmounts");
         if (null != additionalVolumesProperty) {
             String[] additionalVolumes = additionalVolumesProperty.split(";");
