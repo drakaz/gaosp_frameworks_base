@@ -346,13 +346,6 @@ public class WifiConfiguration implements Parcelable {
      */
     public boolean isAdhoc;
    
-    /**
-     * If the signal is Adhoc, then frequency must be set
-     * otherwise, we don't care what the frequency is
-     */
-    public int frequency;
-	    
-	
     public WifiConfiguration() {
         networkId = -1;
         SSID = null;
