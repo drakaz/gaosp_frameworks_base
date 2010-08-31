@@ -428,37 +428,27 @@ class MountService extends IMountService.Stub
                         path = tok[1];
                         // FMT: <label> <mountpoint> <state>
 			if (!tok[1].equals(path)) {
-				if (!tok[1].equals(path_ext)) {
-                            		Slog.w(TAG, String.format(
-                                    	"Skipping unknown volume '%s'",tok[1]));
-                            		continue;
-				}
+                            	Slog.w(TAG, String.format(
+                               	"Skipping unknown volume '%s'",tok[1]));
+                         	continue;
                         }
                         int st = Integer.parseInt(tok[2]);
                         if (st == VolumeState.NoMedia) {
 				if (tok[1].equals(path)) {
                         	    state = Environment.MEDIA_REMOVED;
-				} else if (tok[1].equals(path_ext)) {
-				    state_ext =  Environment.MEDIA_REMOVED;
 				}
                         } else if (st == VolumeState.Idle) {
                                 if (tok[1].equals(path)) {
                             	    state = Environment.MEDIA_UNMOUNTED;
-                                } else if (tok[1].equals(path_ext)) {
-                                    state_ext =  Environment.MEDIA_UNMOUNTED;
                                 }
                         } else if (st == VolumeState.Mounted) {
                                 if (tok[1].equals(path)) {
                             		state = Environment.MEDIA_MOUNTED;
-                                } else if (tok[1].equals(path_ext)) {
-			            state_ext = Environment.MEDIA_MOUNTED;
 				}
                             Slog.i(TAG, "Media already mounted on daemon connection");
                         } else if (st == VolumeState.Shared) {
                                 if (tok[1].equals(path)) {
                             	    state = Environment.MEDIA_SHARED;
-                                } else if (tok[1].equals(path_ext)) {
-				    state_ext = Environment.MEDIA_SHARED;
 				}
                             Slog.i(TAG, "Media shared on daemon connection");
                         } else {
@@ -1078,12 +1068,6 @@ class MountService extends IMountService.Stub
                      */
                 }
             }
-            doShareUnshareVolume(path_ext, method, enable);
-            if (doMountVolume(path_ext) != StorageResultCode.OperationSucceeded) {
-                Slog.e(TAG, "Failed to remount " + path_ext +
-                        " after disabling share method " + method);
-            }
-
         }
     }
 
