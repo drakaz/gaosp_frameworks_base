@@ -2198,6 +2198,13 @@ public final class Settings {
         public static final String LOCK_HOME_IN_MEMORY = "lock_home_in_memory";
 
         /**
+         * HDPI Devices only:  Align battery percentage text in status bar icon  right (0), left (1), center (2)
+         * right (0) is default
+         * @hide
+         */
+        public static final String HDPI_BATTERY_ALIGNMENT = "hdpi_battery_alignment";
+
+        /**
          * Settings to backup. This is here so that it's in the same place as the settings
          * keys and easy to update.
          * @hide
@@ -2267,11 +2274,7 @@ public final class Settings {
             HAPTIC_UP_ARRAY_DEFAULT,
             HAPTIC_LONG_ARRAY_DEFAULT,
             HAPTIC_TAP_ARRAY,
-            HAPTIC_TAP_ARRAY_DEFAULT,
-            NOTIF_BAR_COLOR,
-            NOTIF_BAR_CUSTOM,
-            NOTIF_EXPANDED_BAR_COLOR,
-            NOTIF_EXPANDED_BAR_CUSTOM
+            HAPTIC_TAP_ARRAY_DEFAULT
         };
 
         // Settings moved to Settings.Secure
@@ -2858,10 +2861,15 @@ public final class Settings {
         public static final String HTTP_PROXY = "http_proxy";
 
         /**
-         * If proxy should be active on wifi only
+         * If proxy should be active on wifi
          * @hide
          */
-        public static final String HTTP_PROXY_WIFI_ONLY = "http_proxy_wifi_only";
+        public static final String HTTP_PROXY_WIFI_ON = "http_proxy_wifi_on";
+	/**
+	 * Initialise necessary variables for wifi proxy support.
+     * @hide
+	 */
+	public static final String HTTP_PROXY_WIFI = "http_proxy_wifi";
 
         /**
          * Whether the package installer should allow installation of apps downloaded from
