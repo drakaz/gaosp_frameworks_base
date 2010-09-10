@@ -942,6 +942,10 @@ public class Camera {
         private static final String KEY_MAX_BRIGHTNESS = "brightness-max";
         private static final String KEY_DEFAULT_BRIGHTNESS = "brightness-def";
         private static final String KEY_SMART_CONTRAST = "smart-contrast";
+	private static final String KEY_WIDE_DYNAMIC_RANGE = "wide-dynamic-range" ;
+	private static final String KEY_IMAGE_STABILIZATION_CONTROL = "image-stabilization-control" ;
+	private static final String KEY_FACE_DETECTION = "face-detection" ;
+	private static final String KEY_AEWB_LOCK = "aewb-lock" ;
         
         // Parameter key suffix for supported values.
         private static final String SUPPORTED_VALUES_SUFFIX = "-values";
@@ -2285,7 +2289,120 @@ public class Camera {
         public boolean isSmartContrastEnabled() {
             return "on".equals(get(KEY_SMART_CONTRAST));
         }
+
+        /**
+         * Sets the wide-dynamic-range feature
+         * @param String
+         */
+        public void setWideDynamicRange(String value) {
+            set(KEY_WIDE_DYNAMIC_RANGE, value );
+        }
         
+        /**
+         * Gets the value of wide-dynamic-range
+         *
+         * @return String
+         */
+        public String getWideDynamicRange() {
+            return get(KEY_WIDE_DYNAMIC_RANGE);
+        }
+
+        /**
+         * Gets the supported wide-dynamic-range setting.
+         *
+         * @return a List of wide-dynamic-range string constants. null if wide-dynamic-range
+         *         setting is not supported.
+         */
+	public List<String> getSupportedWideDynamicRange() {
+            String str = get(KEY_WIDE_DYNAMIC_RANGE + SUPPORTED_VALUES_SUFFIX);
+            return split(str);
+        }
+
+        /**
+         * Sets the image-stabilization-control feature
+         * @param String
+         */
+        public void setImageStabilizationControl(String value) {
+            set(KEY_IMAGE_STABILIZATION_CONTROL, value );
+        }
+        
+        /**
+         * Gets the value of image-stabilization-control
+         *
+         * @return String
+         */
+        public String getImageStabilizationControl() {
+            return get(KEY_IMAGE_STABILIZATION_CONTROL);
+        }
+
+        /**
+         * Gets the supported wide-dynamic-range setting.
+         *
+         * @return a List of image-stabilization-control string constants. null if image-stabilization-control
+         *         setting is not supported.
+         */
+	public List<String> getSupportedImageStabilizationControl() {
+            String str = get(KEY_IMAGE_STABILIZATION_CONTROL + SUPPORTED_VALUES_SUFFIX);
+            return split(str);
+        }
+
+        /**
+         * Sets the face-detection feature
+         * @param String
+         */
+        public void setFaceDetection(String value) {
+            set(KEY_FACE_DETECTION, value);
+        }
+        
+        /**
+         * Gets the value of face-detection
+         *
+         * @return String
+         */
+        public String getFaceDetection() {
+            return get(KEY_FACE_DETECTION);
+        }
+   
+        /**
+         * Gets the supported face-detection setting.
+         *
+         * @return a List of face-detection string constants. null if face-detection
+         *         setting is not supported.
+         */
+	public List<String> getSupportedFaceDetection() {
+            String str = get(KEY_FACE_DETECTION + SUPPORTED_VALUES_SUFFIX);
+            return split(str);
+        }
+
+	/**
+         * Sets the aewb-lock feature
+         * @param String
+         */
+        public void setAEWBLock(String value) {
+            set(KEY_AEWB_LOCK, value);
+        }
+        
+        /**
+         * Gets the value of aewb-lock
+         *
+         * @return String
+         */
+        public String getAEWBLock() {
+            return get(KEY_AEWB_LOCK);
+        }
+   
+        /**
+         * Gets the supported aewb-lock setting.
+         *
+         * @return a List of face-detection string constants. null if face-detection
+         *         setting is not supported.
+         */
+	public List<String> getSupportedAEWBLock() {
+            String str = get(KEY_AEWB_LOCK + SUPPORTED_VALUES_SUFFIX);
+            return split(str);
+        }
+
+
         // Splits a comma delimited string to an ArrayList of String.
         // Return null if the passing string is null or the size is 0.
         private ArrayList<String> split(String str) {
