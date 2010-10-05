@@ -96,7 +96,6 @@ public class Environment {
      * computer, has been removed from the device, or some other problem has
      * happened.  You can determine its current state with
      * {@link #getExternalStorageState()}.
-     * @hide
      */
     public static File getExternalSdDirectory() {
         return EXTERNAL_SDCARD_DIRECTORY;
@@ -351,7 +350,6 @@ public class Environment {
      * multiple volumes.
      * 
      * <p>See {@link #getExternalStorageDirectory()} for an example of its use.
-     * @hide
      */
     public static String getExternalSdState() {
         try {
