@@ -107,6 +107,11 @@ sp<IMemoryHeap> CameraHardwareStub::getPreviewHeap() const
     return mPreviewHeap;
 }
 
+sp<IMemoryHeap> CameraHardwareStub::getPreviewHeap( int32_t i ) const
+{
+	return getPreviewHeap() ;
+}
+
 sp<IMemoryHeap> CameraHardwareStub::getRawHeap() const
 {
     return mRawHeap;
