@@ -40,6 +40,7 @@ import android.os.Parcel;
 import android.os.PowerManager;
 import android.os.SystemProperties;
 import android.os.PowerManager.WakeLock;
+import android.provider.Settings;
 import android.telephony.NeighboringCellInfo;
 import android.telephony.PhoneNumberUtils;
 import android.telephony.SmsManager;
@@ -1102,11 +1103,20 @@ public final class RIL extends BaseCommands implements CommandsInterface {
 
     public void
     sendSMS (String smscPDU, String pdu, Message result) {
+    	// drakaz : use custom smsc if exist
+    	String mCurrentSmscNumber = Settings.System.getString(mContext.getContentResolver(), Settings.System.MY_SMSC_NUMBER);
+    	
         RILRequest rr
                 = RILRequest.obtain(RIL_REQUEST_SEND_SMS, result);
 
         rr.mp.writeInt(2);
-        rr.mp.writeString(smscPDU);
+        if (mCurrentSmscNumber == null) {
+        	rr.mp.writeString(smscPDU);
+        } else if (mCurrentSmscNumber.contentEquals("") || mCurrentSmscNumber.contentEquals("default")) {
+            rr.mp.writeString(smscPDU);
+        } else {
+            rr.mp.writeString(mCurrentSmscNumber);
+        }
         rr.mp.writeString(pdu);
 
         if (RILJ_LOGD) riljLog(rr.serialString() + "> " + requestToString(rr.mRequest));

@@ -2245,6 +2245,12 @@ public final class Settings {
          * @hide
          */
         public static final String QUIET_HOURS_DIM = "quiet_hours_dim";
+        
+        /**
+         * SMSC when using another smsc than default .
+         * @hide
+         */
+        public static final String MY_SMSC_NUMBER = "my_smsc_number";
 
         /**
          * Settings to backup. This is here so that it's in the same place as the settings
@@ -2322,7 +2328,8 @@ public final class Settings {
             QUIET_HOURS_END,
             QUIET_HOURS_MUTE,
             QUIET_HOURS_STILL,
-            QUIET_HOURS_DIM
+            QUIET_HOURS_DIM,
+            MY_SMSC_NUMBER
         };
 
         // Settings moved to Settings.Secure
