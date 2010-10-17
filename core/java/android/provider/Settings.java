@@ -27,6 +27,7 @@ import android.content.ContentQueryMap;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.IContentProvider;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -57,8 +58,14 @@ import java.util.Map;
  * The Settings provider contains global system-level device preferences.
  */
 public final class Settings {
+    /** Intent actions for Settings
+     * @hide
+     */
+    public static final String SETTINGS_CHANGED = "android.settings.SETTINGS_CHANGED_ACTION";
 
-    // Intent actions for Settings
+    public Settings() {
+        /* Empty for API conflicts */
+    }
 
     /**
      * Activity Action: Show system settings.
@@ -1765,6 +1772,13 @@ public final class Settings {
         public static final String SHOW_STATUS_DBM = "show_status_dbm";
 
         /**
+         * Hide the icon strength icon when DBM enabled.
+         * @hide
+         */
+        public static final String SHOW_STATUS_HIDE_SIGNAL = "hide_signal_icon";
+
+
+        /**
          * Specifies the dbm signal level color
          * @hide
          */
@@ -2156,13 +2170,13 @@ public final class Settings {
          * Trackball Notification Colors. The value is String  pkg=color|pkg=color
          * @hide
          */
-        public static final String NOTIFICATION_PACKAGE_COLORS = "|";
+        public static final String NOTIFICATION_PACKAGE_COLORS = "pref_package_colors";
 
         /**
          * Trackball Notification List. The value is String  pkg|pkg
          * @hide
          */
-        public static final String NOTIFICATION_PACKAGE_LIST = "|";
+        public static final String NOTIFICATION_PACKAGE_LIST = "pref_package_list";
 
         /**
          * Trackball Notification Colors Debugging. The value is boolean (1 or 0)
@@ -2201,6 +2215,13 @@ public final class Settings {
         public static final String LOCKSCREEN_ALWAYS_MUSIC_CONTROLS = "lockscreen_always_music_controls";
 
         /**
+         * Whether to use the custom quick unlock screen control
+         * @hide
+         */
+        public static final String LOCKSCREEN_QUICK_UNLOCK_CONTROL =
+            "lockscreen_quick_unlock_control";
+
+        /**
          * Whether to use a custom pull-down notification screen
          * @hide 
          */
@@ -2211,6 +2232,36 @@ public final class Settings {
          * @hide
          */
         public static final String NOTIF_EXPANDED_BAR_CUSTOM = "notif_expanded_bar_custom";
+
+        /**
+         * Use the Notification Power Widget? (Who wouldn't!)
+         * @hide
+         */
+        public static final String EXPANDED_VIEW_WIDGET = "expanded_view_widget";
+
+        /**
+         * Notification Indicator Color
+         * @hide
+         */
+        public static final String EXPANDED_VIEW_WIDGET_COLOR = "expanded_widget_color";
+
+        /**
+         * Widget Buttons to Use
+         * @hide
+         */
+        public static final String WIDGET_BUTTONS = "expanded_widget_buttons";
+
+        /** @hide */
+        public static final String EXPANDED_BRIGHTNESS_MODE = "expanded_brightness_mode";
+
+        /** @hide */
+        public static final String EXPANDED_NETWORK_MODE = "expanded_network_mode";
+
+        /** @hide */
+        public static final String EXPANDED_SCREENTIMEOUT_MODE = "expanded_screentimeout_mode";
+
+        /** @hide */
+        public static final String EXPANDED_RING_MODE = "expanded_ring_mode";
 
         /**
          * Whether to keep the home app at a higher OOM adjustement
@@ -4110,12 +4161,13 @@ public final class Settings {
 
         /**
          * Thread-safe method for enabling or disabling a single location provider.
-         * @param cr the content resolver to use
+         * @param cr the content resolver from the calling application
          * @param provider the location provider to enable or disable
          * @param enabled true if the provider should be enabled
          */
         public static final void setLocationProviderEnabled(ContentResolver cr,
                 String provider, boolean enabled) {
+            Context context = cr.getContext();
             // to ensure thread safety, we write the provider name with a '+' or '-'
             // and let the SettingsProvider handle it rather than reading and modifying
             // the list of enabled providers.
@@ -4125,6 +4177,16 @@ public final class Settings {
                 provider = "-" + provider;
             }
             putString(cr, Settings.Secure.LOCATION_PROVIDERS_ALLOWED, provider);
+            try {
+                Intent i = new Intent();
+                i.setAction(Settings.SETTINGS_CHANGED);
+                i.putExtra("SETTING", "GPS");
+                i.putExtra("GPS_STATUS_CHANGE", enabled);
+                context.sendBroadcast(i);
+            } catch(Exception e) {
+                //This is ignored, as this try-catch is just incase this is called
+                //Before the system is read.
+            }
         }
     }
 
