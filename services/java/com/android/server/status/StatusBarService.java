@@ -279,8 +279,6 @@ public class StatusBarService extends IStatusBar.Stub
     Drawable expBarNotifTitleDrawable;
     
     
-    private WifiManager mWifiManager = null;
-    private BluetoothAdapter mBluetoothAdapter = null;
     // for disabling the status bar
     ArrayList<DisableRecord> mDisableRecords = new ArrayList<DisableRecord>();
     int mDisabled = 0;
@@ -437,8 +435,6 @@ public class StatusBarService extends IStatusBar.Stub
         lp.windowAnimations = R.style.Animation_StatusBar;
         WindowManagerImpl.getDefault().addView(view, lp);
 
-        mWifiManager = (WifiManager)mContext.getSystemService(Context.WIFI_SERVICE);
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         setupPowerWidget();
     }
 
@@ -2363,18 +2359,18 @@ public class StatusBarService extends IStatusBar.Stub
                                 notifBarColorMask, notifPDMode));
                     mDateView.setPadding(6, 0, 6, 0);
                 }
-            } else if(uri.equals(Settings.System.getUriFor(Settings.System.WIDGET_BUTTONS))) {
+            } else if (uri.equals(Settings.System.getUriFor(Settings.System.WIDGET_BUTTONS))) {
                 setupPowerWidget();
-            }
-
-            boolean powerWidget = Settings.System.getInt(mContext.getContentResolver(),
-                       Settings.System.EXPANDED_VIEW_WIDGET, 0) == 1;
-            if(!powerWidget) {
-                mExpandedView.findViewById(R.id.exp_power_stat).
-                    setVisibility(View.GONE);
-            } else {
-                mExpandedView.findViewById(R.id.exp_power_stat).
-                    setVisibility(View.VISIBLE);
+            } else if (uri.equals(Settings.System.getUriFor(Settings.System.EXPANDED_VIEW_WIDGET))) {
+                boolean powerWidget = Settings.System.getInt(mContext.getContentResolver(),
+                            Settings.System.EXPANDED_VIEW_WIDGET, 1) == 1;
+                if(!powerWidget) {
+                    mExpandedView.findViewById(R.id.exp_power_stat).
+                        setVisibility(View.GONE);
+                } else {
+                    mExpandedView.findViewById(R.id.exp_power_stat).
+                        setVisibility(View.VISIBLE);
+                }
             }
             updateWidget();
         }
