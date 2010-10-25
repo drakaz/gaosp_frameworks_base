@@ -3087,7 +3087,6 @@ class PowerManagerService extends IPowerManager.Stub
             }
         }
 
-<<<<<<< HEAD
  // drakaz : methods to enable/disable Samsung I7500 hardware light sensor
     private void enableI7500HardLightSensor() {
   	  try{
