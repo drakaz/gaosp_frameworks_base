@@ -173,11 +173,8 @@ public:
 #endif
 #ifdef HAVE_FM_RADIO
         AUDIO_SET_PARAMETER,
-<<<<<<< HEAD
-=======
         AUDIO_SET_FM_VOLUME
 #endif
->>>>>>> 8198ab6c9943852c9cc135c27eb94d78ff3d700c
     };
 
     // record interface
