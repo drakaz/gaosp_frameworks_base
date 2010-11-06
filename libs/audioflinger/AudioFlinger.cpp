@@ -120,10 +120,16 @@ static bool settingsAllowed() {
 }
 
 // ----------------------------------------------------------------------------
-
+#ifdef HAVE_FM_RADIO
+AudioFlinger::AudioFlinger()
+    : BnAudioFlinger(),
+        mAudioHardware(0), mMasterVolume(1.0f), mMasterMute(false), mNextThreadId(0),  mFmOn(false)
+#endif
+#ifndef HAVE_FM_RADIO
 AudioFlinger::AudioFlinger()
     : BnAudioFlinger(),
         mAudioHardware(0), mMasterVolume(1.0f), mMasterMute(false), mNextThreadId(0)
+#endif
 {
     mHardwareStatus = AUDIO_HW_IDLE;
 
@@ -568,6 +574,11 @@ bool AudioFlinger::isStreamActive(int stream) const
             return true;
         }
     }
+#ifdef HAVE_FM_RADIO
+    if (mFmOn && stream == AudioSystem::MUSIC) {
+        return true;
+    }
+#endif
     return false;
 }
 
@@ -602,7 +613,30 @@ status_t AudioFlinger::setParameters(int ioHandle, const String8& keyValuePairs)
         }
     }
 #endif
+#ifdef HAVE_FM_RADIO
+    AudioParameter param = AudioParameter(keyValuePairs);
+    String8 key = String8(AudioParameter::keyRouting);
+    int device;
+    if (param.getInt(key, device) == NO_ERROR) {
+        if((device & AudioSystem::DEVICE_OUT_FM) && mFmOn == false){
+            mFmOn = true;
+         } else if (mFmOn == true && !(device & AudioSystem::DEVICE_OUT_FM)){
+            mFmOn = false;
+         }
+    }
 
+    String8 fmOnKey = String8(AudioParameter::keyFmOn);
+    String8 fmOffKey = String8(AudioParameter::keyFmOff);
+    if (param.getInt(fmOnKey, device) == NO_ERROR) {
+        mFmOn = true;
+        // Call hardware to switch FM on/off
+        mAudioHardware->setParameters(keyValuePairs);
+    } else if (param.getInt(fmOffKey, device) == NO_ERROR) {
+        mFmOn = false;
+        // Call hardware to switch FM on/off
+        mAudioHardware->setParameters(keyValuePairs);
+    }
+#endif
     // ioHandle == 0 means the parameters are global to the audio hardware interface
     if (ioHandle == 0) {
         /* Set global DSP parameters, if any. */
@@ -711,6 +745,23 @@ status_t AudioFlinger::getRenderPosition(uint32_t *halFrames, uint32_t *dspFrame
 
     return BAD_VALUE;
 }
+
+#ifdef HAVE_FM_RADIO
+status_t AudioFlinger::setFmVolume(float value)
+{
+    // check calling permissions
+    if (!settingsAllowed()) {
+        return PERMISSION_DENIED;
+    }
+
+    AutoMutex lock(mHardwareLock);
+    mHardwareStatus = AUDIO_SET_FM_VOLUME;
+    status_t ret = mAudioHardware->setFmVolume(value);
+    mHardwareStatus = AUDIO_HW_IDLE;
+
+    return ret;
+}
+#endif
 
 void AudioFlinger::registerClient(const sp<IAudioFlingerClient>& client)
 {
