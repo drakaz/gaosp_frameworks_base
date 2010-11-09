@@ -99,8 +99,8 @@ status_t AudioPolicyManagerBase::setDeviceConnectionState(AudioSystem::audio_dev
                 param.addInt(String8(AudioParameter::keyFmOn), mAvailableOutputDevices);
                 mpClientInterface->setParameters(mHardwareOutput, param.toString());
             }
-            break;
 #endif
+            break;
         // handle output device disconnection
         case AudioSystem::DEVICE_STATE_UNAVAILABLE: {
             if (!(mAvailableOutputDevices & device)) {
