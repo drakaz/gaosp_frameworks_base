@@ -31,6 +31,9 @@ public class FlashlightButton extends PowerButton {
     private static final int MODE_DEFAULT = 0;
     private static final int MODE_HIGH = 1;
     private static boolean useDeathRay = !Build.DEVICE.equals("supersonic");;
+    
+	private boolean opened = false;
+	private boolean mFlashEnabled = false;
 
     private static final String FLASHLIGHT_FILE;
     private static final String FLASHLIGHT_FILE_SPOTLIGHT = "/sys/class/leds/spotlight/brightness";
@@ -41,6 +44,15 @@ public class FlashlightButton extends PowerButton {
         } else {
             FLASHLIGHT_FILE = "/sys/class/leds/flashlight/brightness";
         }
+    }
+    
+	public static native String openFlash() ;
+	public static native String closeFlash() ;
+	public static native String setFlashOn() ;
+	public static native String setFlashOff() ;
+	// Load libflash once on app startup.
+    static {
+    	System.loadLibrary("jni_flashwidget");
     }
 
     public void updateState(Context context) {
@@ -69,37 +81,26 @@ public class FlashlightButton extends PowerButton {
 
 
     public boolean getFlashlightEnabled() {
-        try {
-            FileInputStream fis = new FileInputStream(FLASHLIGHT_FILE);
-            int result = fis.read();
-            fis.close();
-            return (result != '0');
-        } catch (Exception e) {
-            return false;
-        }
+        return mFlashEnabled;
     }
 
     public void setFlashlightEnabled(boolean on) {
+    	if (!opened) {
+            openFlash();
+            opened = true;		    
+        }
         try {
-            if (mWriter == null) {
-                mWriter = new FileWriter(FLASHLIGHT_FILE);
-            }
-            int value = 0;
             if (on) {
-                switch (currentMode) {
-                    case MODE_HIGH:
-                        value = useDeathRay ? 3 : 128;
-                        break;
-                    default:
-                        value = 1;
-                        break;
+            	if(!mFlashEnabled) {
+        			setFlashOn();
+        			mFlashEnabled = true;
                 }
             }
-            mWriter.write(String.valueOf(value));
-            mWriter.flush();
             if (!on) {
-                mWriter.close();
-                mWriter = null;
+            	opened = false;
+            	mFlashEnabled = false;
+            	setFlashOff();
+            	closeFlash();
             }
         } catch (Exception e) {
             Log.e(TAG, "setFlashlightEnabled failed", e);
@@ -131,5 +132,4 @@ public class FlashlightButton extends PowerButton {
     @Override
     void initButton(int position) {
     }
-
 }

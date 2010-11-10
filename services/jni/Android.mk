@@ -9,7 +9,7 @@ LOCAL_SRC_FILES:= \
     com_android_server_SensorService.cpp \
     com_android_server_SystemServer.cpp \
     com_android_server_VibratorService.cpp \
-    onload.cpp
+    onload.cpp 
 
 LOCAL_C_INCLUDES += \
 	$(JNI_H_INCLUDE)
@@ -43,3 +43,12 @@ endif
 LOCAL_MODULE:= libandroid_servers
 
 include $(BUILD_SHARED_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES:= flash.c
+LOCAL_MODULE := libjni_flashwidget
+LOCAL_C_INCLUDES += $(JNI_H_INCLUDE)
+LOCAL_PRELINK_MODULE := false
+LOCAL_SHARED_LIBRARIES := libutils liblog
+include $(BUILD_SHARED_LIBRARY)
+
