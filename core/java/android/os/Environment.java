@@ -43,6 +43,9 @@ public class Environment {
     private static final File EXTERNAL_STORAGE_DIRECTORY
             = getDirectory("EXTERNAL_STORAGE", "/sdcard");
 
+    private static final File EXTERNAL_STORAGE2_DIRECTORY
+            = getDirectory("EXTERNAL_STORAGE2", "/sdcard2");
+
     private static final File EXTERNAL_SDCARD_DIRECTORY
             = getDirectory("SD_EXT_DIRECTORY", "/sd-ext");
 
@@ -89,6 +92,9 @@ public class Environment {
     public static File getExternalStorageDirectory() {
         return EXTERNAL_STORAGE_DIRECTORY;
     }
+    public static File getExternalStorage2Directory() {
+        return EXTERNAL_STORAGE2_DIRECTORY;
+    }
 
      /**
      * Gets the Android external SD.  This directory may not
@@ -100,7 +106,6 @@ public class Environment {
     public static File getExternalSdDirectory() {
         return EXTERNAL_SDCARD_DIRECTORY;
     }
- 
 
     /**
      * Standard directory in which to place any audio files that should be
