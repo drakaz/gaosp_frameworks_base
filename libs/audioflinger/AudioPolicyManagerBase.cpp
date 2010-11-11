@@ -375,13 +375,11 @@ void AudioPolicyManagerBase::setForceUse(AudioSystem::force_use usage, AudioSyst
         mForceUse[usage] = config;
         break;
     case AudioSystem::FOR_MEDIA:
-#ifdef HAVE_FM_RADIO
         if (config != AudioSystem::FORCE_HEADPHONES && config != AudioSystem::FORCE_BT_A2DP &&
+#ifdef HAVE_FM_RADIO
             config != AudioSystem::FORCE_WIRED_ACCESSORY && config != AudioSystem::FORCE_SPEAKER &&
             config != AudioSystem::FORCE_NONE) {
-#endif
-#ifndef HAVE_FM_RADIO
-        if (config != AudioSystem::FORCE_HEADPHONES && config != AudioSystem::FORCE_BT_A2DP &&
+#else
             config != AudioSystem::FORCE_WIRED_ACCESSORY && config != AudioSystem::FORCE_NONE) {
 #endif
             LOGW("setForceUse() invalid config %d for FOR_MEDIA", config);
@@ -1555,8 +1553,7 @@ uint32_t AudioPolicyManagerBase::getDeviceForStrategy(routing_strategy strategy,
         if (device2 == 0) {
             device2 = mAvailableOutputDevices & AudioSystem::DEVICE_OUT_AUX_DIGITAL;
         }
-#endif
-#ifndef HAVE_FM_RADIO
+#else
         uint32_t device2 = mAvailableOutputDevices & AudioSystem::DEVICE_OUT_AUX_DIGITAL;
 #endif
         if (device2 == 0) {
@@ -1839,8 +1836,7 @@ status_t AudioPolicyManagerBase::checkAndSetVolume(int stream, int index, audio_
     // do not set volume if the float value did not change
 #ifdef HAVE_FM_RADIO
     if (volume != mOutputs.valueFor(output)->mCurVolume[stream] || (stream == AudioSystem::FM) || force) {
-#endif
-#ifndef HAVE_FM_RADIO
+#else
     if (volume != mOutputs.valueFor(output)->mCurVolume[stream] || force) {
 #endif
         mOutputs.valueFor(output)->mCurVolume[stream] = volume;

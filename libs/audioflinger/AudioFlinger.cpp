@@ -120,14 +120,11 @@ static bool settingsAllowed() {
 }
 
 // ----------------------------------------------------------------------------
+AudioFlinger::AudioFlinger()
+    : BnAudioFlinger(),
 #ifdef HAVE_FM_RADIO
-AudioFlinger::AudioFlinger()
-    : BnAudioFlinger(),
         mAudioHardware(0), mMasterVolume(1.0f), mMasterMute(false), mNextThreadId(0),  mFmOn(false)
-#endif
-#ifndef HAVE_FM_RADIO
-AudioFlinger::AudioFlinger()
-    : BnAudioFlinger(),
+#else
         mAudioHardware(0), mMasterVolume(1.0f), mMasterMute(false), mNextThreadId(0)
 #endif
 {

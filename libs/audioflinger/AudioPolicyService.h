@@ -132,11 +132,8 @@ private:
             STOP_TONE,
             SET_VOLUME,
             SET_PARAMETERS,
-#ifndef HAVE_FM_RADIO
-            SET_VOICE_VOLUME
-#endif
-#ifdef HAVE_FM_RADIO
             SET_VOICE_VOLUME,
+#ifdef HAVE_FM_RADIO
             SET_FM_VOLUME
 #endif
         };

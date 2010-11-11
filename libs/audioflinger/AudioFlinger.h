@@ -168,11 +168,8 @@ public:
         AUDIO_HW_GET_MIC_MUTE,
         AUDIO_HW_SET_MIC_MUTE,
         AUDIO_SET_VOICE_VOLUME,
-#ifndef HAVE_FM_RADIO
-        AUDIO_SET_PARAMETER
-#endif
-#ifdef HAVE_FM_RADIO
         AUDIO_SET_PARAMETER,
+#ifdef HAVE_FM_RADIO
         AUDIO_SET_FM_VOLUME
 #endif
     };
