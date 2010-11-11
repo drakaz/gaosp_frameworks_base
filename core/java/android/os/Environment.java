@@ -92,6 +92,11 @@ public class Environment {
     public static File getExternalStorageDirectory() {
         return EXTERNAL_STORAGE_DIRECTORY;
     }
+
+    /**
+     * Gets the Android external storage (external sdcard for I7500) directory
+     * @hide
+     */
     public static File getExternalStorage2Directory() {
         return EXTERNAL_STORAGE2_DIRECTORY;
     }
