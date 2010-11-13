@@ -45,7 +45,6 @@ struct SensorOffsets
 
 static sensors_module_t* sSensorModule = 0;
 static sensors_data_device_t* sSensorDevice = 0;
-static sensors_data_device15_t* sSensorDevice15 = 0;
 
 static jint
 sensors_module_init(JNIEnv *env, jclass clazz)
@@ -94,7 +93,6 @@ sensors_data_init(JNIEnv *env, jclass clazz)
     if (sSensorModule == NULL)
         return -1;
     int err = sensors_data_open(&sSensorModule->common, &sSensorDevice);
-    sSensorDevice15 = (sensors_data_device15_t*)sSensorDevice;
     return err;
 }
 
@@ -137,25 +135,21 @@ sensors_data_open(JNIEnv *env, jclass clazz, jobjectArray fdArray, jintArray int
     }
 
     // doesn't take ownership of the native handle
-    jint ret = sSensorDevice15->data_open(sSensorDevice15, handle->data[0]);
-    native_handle_close(handle);
-    native_handle_delete(handle);
-
-    return ret;	
+    return sSensorDevice->data_open(sSensorDevice, handle);
 }
 
 static jint
 sensors_data_close(JNIEnv *env, jclass clazz)
 {
-    return sSensorDevice15->data_close(sSensorDevice15);
+    return sSensorDevice->data_close(sSensorDevice);
 }
 
 static jint
 sensors_data_poll(JNIEnv *env, jclass clazz, 
         jfloatArray values, jintArray status, jlongArray timestamp)
 {
-    sensors_data15_t data;
-    int res = sSensorDevice15->poll(sSensorDevice15, &data);
+    sensors_data_t data;
+    int res = sSensorDevice->poll(sSensorDevice, &data);
     if (res >= 0) {
         jint accuracy = data.vector.status;
         env->SetFloatArrayRegion(values, 0, 3, data.vector.v);
@@ -201,4 +195,3 @@ int register_android_hardware_SensorManager(JNIEnv *env)
     return jniRegisterNativeMethods(env, "android/hardware/SensorManager",
             gMethods, NELEM(gMethods));
 }
-
