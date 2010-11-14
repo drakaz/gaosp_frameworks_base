@@ -212,6 +212,9 @@ class BatteryService extends Binder {
 
         shutdownIfNoPower();
         shutdownIfOverTemp();
+        
+        // drakaz : increase kernel return (*10) to fit android expectation
+        mBatteryTemperature = mBatteryTemperature * 10;
 
         mBatteryLevelCritical = mBatteryLevel <= CRITICAL_BATTERY_LEVEL;
         if (mAcOnline) {
