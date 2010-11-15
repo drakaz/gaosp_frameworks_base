@@ -19,6 +19,7 @@
 #include "utils/Log.h"
 
 #include <hardware/sensors.h>
+#include "cutils/properties.h"
 
 #include "jni.h"
 #include "JNIHelp.h"
@@ -119,10 +120,29 @@ android_close(JNIEnv *env, jclass clazz)
         return 0;
 }
 
+static int active_sensors = 0;
+
 static jboolean
 android_activate(JNIEnv *env, jclass clazz, jint sensor, jboolean activate)
 {
+    int mask = 1 << sensor;
+    int prev_sens = active_sensors;	
+    if(activate)
+	active_sensors |= mask;
+    else
+	active_sensors &= ~mask;
+    if(active_sensors){
+	property_set("ctl.start", "akmd2");
+	usleep(500000);
+    } 	
     int active = sSensorDevice->activate(sSensorDevice, sensor, activate);
+    	
+    if(active < 0) 
+	active_sensors = prev_sens;
+    
+    if(active_sensors == 0)
+	property_set("ctl.stop", "akmd2");
+
     return (active<0) ? false : true;
 }
 
