@@ -46,9 +46,6 @@ public class Environment {
     private static final File EXTERNAL_STORAGE2_DIRECTORY
             = getDirectory("EXTERNAL_STORAGE2", "/sdcard2");
 
-    private static final File EXTERNAL_SDCARD_DIRECTORY
-            = getDirectory("SD_EXT_DIRECTORY", "/sd-ext");
-
     private static final File EXTERNAL_STORAGE_ANDROID_DATA_DIRECTORY
             = new File (new File(getDirectory("EXTERNAL_STORAGE", "/sdcard"),
                     "Android"), "data");
@@ -109,7 +106,7 @@ public class Environment {
      * {@link #getExternalStorageState()}.
      */
     public static File getExternalSdDirectory() {
-        return EXTERNAL_SDCARD_DIRECTORY;
+        return EXTERNAL_STORAGE2_DIRECTORY;
     }
 
     /**
