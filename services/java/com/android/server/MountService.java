@@ -1021,6 +1021,17 @@ class MountService extends IMountService.Stub
             ShutdownCallBack ucb_ext = new ShutdownCallBack(path_ext, observer);
             mHandler.sendMessage(mHandler.obtainMessage(H_UNMOUNT_PM_UPDATE, ucb));
             mHandler.sendMessage(mHandler.obtainMessage(H_UNMOUNT_PM_UPDATE, ucb_ext));
+        } else if (observer != null) {
+            /*
+             * Observer is waiting for onShutDownComplete when we are done.
+             * Since nothing will be done send notification directly so shutdown
+             * sequence can continue.
+             */
+            try {
+                observer.onShutDownComplete(StorageResultCode.OperationSucceeded);
+            } catch (RemoteException e) {
+                Slog.w(TAG, "RemoteException when shutting down");
+            }
         }
     }
 

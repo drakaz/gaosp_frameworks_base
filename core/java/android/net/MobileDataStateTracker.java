@@ -79,6 +79,7 @@ public class MobileDataStateTracker extends NetworkStateTracker {
             mEnabled = false;
         }
 
+<<<<<<< HEAD
 	// drakaz : replace rmnet0 for pdp0
         mDnsPropNames = new String[] {
                 "net.pdp0.dns1",
@@ -92,6 +93,18 @@ public class MobileDataStateTracker extends NetworkStateTracker {
                 "net.ppp0.dns1",
                 "net.ppp0.dns2"};
 
+=======
+        String[] ifNames = SystemProperties.get(
+            "mobiledata.interfaces",
+            "rmnet0,eth0,gprs,ppp0"
+        ).split(",");
+
+        mDnsPropNames = new String[2 * ifNames.length];
+        for (int i = 0; i < ifNames.length; ++i) {
+            mDnsPropNames[2*i+0] = "net." + ifNames[i] + ".dns1";
+            mDnsPropNames[2*i+1] = "net." + ifNames[i] + ".dns2";
+        }
+>>>>>>> 6493542ced6999b81ac2076355a2f95ee73d8061
     }
 
     /**

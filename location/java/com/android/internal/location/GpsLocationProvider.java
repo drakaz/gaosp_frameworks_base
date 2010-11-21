@@ -199,7 +199,7 @@ public class GpsLocationProvider implements LocationProviderInterface {
     // flags to trigger NTP or XTRA data download when network becomes available
     // initialized to true so we do NTP and XTRA when the network comes up after booting
     private boolean mInjectNtpTimePending = true;
-    private boolean mDownloadXtraDataPending = true;
+    private boolean mDownloadXtraDataPending = false;
 
     // true if GPS is navigating
     private boolean mNavigating;
@@ -215,6 +215,9 @@ public class GpsLocationProvider implements LocationProviderInterface {
 
     // true if we started navigation
     private boolean mStarted;
+
+    // true if XTRA is supported
+    private boolean mSupportsXtra;
 
     // for calculating time to first fix
     private long mFixRequestTime = 0;
@@ -349,10 +352,6 @@ public class GpsLocationProvider implements LocationProviderInterface {
     public GpsLocationProvider(Context context, ILocationManager locationManager) {
         mContext = context;
         mLocationManager = locationManager;
-
-        mDownloadXtraDataPending = context.getResources().getBoolean(
-                com.android.internal.R.bool.config_gps_xtra_download_on_boot);
-
         mNIHandler = new GpsNetInitiatedHandler(context, this);
 
         mLocation.setExtras(mLocationExtras);
@@ -532,7 +531,7 @@ public class GpsLocationProvider implements LocationProviderInterface {
     }
 
     private void handleDownloadXtraData() {
-        if (!mDownloadXtraDataPending) {
+        if (!mNetworkAvailable) {
             // try again when network is up
             mDownloadXtraDataPending = true;
             return;
@@ -691,7 +690,13 @@ public class GpsLocationProvider implements LocationProviderInterface {
         mEnabled = native_init();
 
         if (mEnabled) {
-	    Log.d(TAG, "isXtraEnabled: "+native_supports_xtra());
+            mSupportsXtra = native_supports_xtra();
+            if (mSuplServerHost != null) {
+                native_set_agps_server(AGPS_TYPE_SUPL, mSuplServerHost, mSuplServerPort);
+            }
+            if (mC2KServerHost != null) {
+                native_set_agps_server(AGPS_TYPE_C2K, mC2KServerHost, mC2KServerPort);
+            }
 
             // run event listener thread while we are enabled
             mEventThread = new GpsEventThread();
@@ -890,7 +895,7 @@ public class GpsLocationProvider implements LocationProviderInterface {
             return true;
         }
         if ("force_xtra_injection".equals(command)) {
-            if (native_supports_xtra()) {
+            if (mSupportsXtra) {
                 xtraDownloadRequest();
                 return true;
             }
@@ -1415,7 +1420,7 @@ public class GpsLocationProvider implements LocationProviderInterface {
                     handleInjectNtpTime();
                     break;
                 case DOWNLOAD_XTRA_DATA:
-                    if (native_supports_xtra()) {
+                    if (mSupportsXtra) {
                         handleDownloadXtraData();
                     }
                     break;

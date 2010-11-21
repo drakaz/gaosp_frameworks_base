@@ -237,6 +237,9 @@ static const char *FourCC2MIME(uint32_t fourcc) {
         case FOURCC('m', 'p', '4', 'a'):
             return MEDIA_MIMETYPE_AUDIO_AAC;
 
+        case FOURCC('.', 'm', 'p', '3'):
+            return MEDIA_MIMETYPE_AUDIO_MPEG;
+
         case FOURCC('s', 'a', 'm', 'r'):
             return MEDIA_MIMETYPE_AUDIO_AMR_NB;
 
@@ -422,11 +425,16 @@ status_t MPEG4Extractor::parseChunk(off_t *offset, int depth) {
     uint32_t chunk_type = ntohl(hdr[1]);
     off_t data_offset = *offset + 8;
 
+    if(chunk_size == 0)
+       return ERROR_MALFORMED;
+
     if (chunk_size == 1) {
         if (mDataSource->readAt(*offset + 8, &chunk_size, 8) < 8) {
             return ERROR_IO;
         }
         chunk_size = ntoh64(chunk_size);
+        if (chunk_size == 0)
+            return ERROR_MALFORMED;
         data_offset += 8;
     }
 
@@ -484,7 +492,6 @@ status_t MPEG4Extractor::parseChunk(off_t *offset, int depth) {
         case FOURCC('m', 'o', 'o', 'f'):
         case FOURCC('t', 'r', 'a', 'f'):
         case FOURCC('m', 'f', 'r', 'a'):
-        case FOURCC('s', 'k', 'i' ,'p'):
         case FOURCC('u', 'd', 't', 'a'):
         case FOURCC('i', 'l', 's', 't'):
         {
@@ -725,6 +732,7 @@ status_t MPEG4Extractor::parseChunk(off_t *offset, int depth) {
         }
 
         case FOURCC('m', 'p', '4', 'a'):
+        case FOURCC('.', 'm', 'p', '3'):
         case FOURCC('s', 'a', 'm', 'r'):
         case FOURCC('s', 'a', 'w', 'b'):
         {
@@ -767,7 +775,15 @@ status_t MPEG4Extractor::parseChunk(off_t *offset, int depth) {
             mLastTrack->meta->setInt32(kKeySampleRate, sample_rate);
 
             off_t stop_offset = *offset + chunk_size;
-            *offset = data_offset + sizeof(buffer);
+            if (!strcasecmp(MEDIA_MIMETYPE_AUDIO_MPEG,
+                        FourCC2MIME(chunk_type))) {
+               // ESD is not required in mp3
+               *offset = stop_offset;
+            }
+           else
+           {
+               *offset = data_offset + sizeof(buffer);
+           }
             while (*offset < stop_offset) {
                 status_t err = parseChunk(offset, depth + 1);
                 if (err != OK) {
@@ -907,23 +923,29 @@ status_t MPEG4Extractor::parseChunk(off_t *offset, int depth) {
 
         case FOURCC('e', 's', 'd', 's'):
         {
+            status_t err = OK;
+            uint8_t * buffer = new uint8_t[chunk_data_size];
+
             if (chunk_data_size < 4) {
-                return ERROR_MALFORMED;
+               err = ERROR_MALFORMED;
+               goto esds_parse_fail;
             }
 
-            uint8_t buffer[256];
-            if (chunk_data_size > (off_t)sizeof(buffer)) {
-                return ERROR_BUFFER_TOO_SMALL;
+            if (buffer == NULL) {
+                err = ERROR_BUFFER_TOO_SMALL;
+                goto esds_parse_fail;
             }
 
             if (mDataSource->readAt(
                         data_offset, buffer, chunk_data_size) < chunk_data_size) {
-                return ERROR_IO;
+                err = ERROR_IO;
+                goto esds_parse_fail;
             }
 
             if (U32_AT(buffer) != 0) {
                 // Should be version 0, flags 0.
-                return ERROR_MALFORMED;
+                err = ERROR_MALFORMED;
+                goto esds_parse_fail;
             }
 
             mLastTrack->meta->setData(
@@ -936,13 +958,18 @@ status_t MPEG4Extractor::parseChunk(off_t *offset, int depth) {
                 // The generic header appears to only contain generic
                 // information...
 
-                status_t err = updateAudioTrackInfoFromESDS_MPEG4Audio(
+                 err = updateAudioTrackInfoFromESDS_MPEG4Audio(
                         &buffer[4], chunk_data_size - 4);
 
                 if (err != OK) {
-                    return err;
+                    goto esds_parse_fail;
                 }
             }
+
+esds_parse_fail: //do memory cleanup
+            delete [] buffer;
+            if (err != OK)
+                return err;
 
             *offset += chunk_size;
             break;
@@ -950,18 +977,27 @@ status_t MPEG4Extractor::parseChunk(off_t *offset, int depth) {
 
         case FOURCC('a', 'v', 'c', 'C'):
         {
-            char buffer[256];
-            if (chunk_data_size > (off_t)sizeof(buffer)) {
-                return ERROR_BUFFER_TOO_SMALL;
+            status_t err = OK;
+            uint8_t * buffer = new uint8_t[chunk_data_size];
+
+            if (buffer == NULL) {
+                err = ERROR_BUFFER_TOO_SMALL;
+                goto avcC_parse_fail;
             }
 
             if (mDataSource->readAt(
                         data_offset, buffer, chunk_data_size) < chunk_data_size) {
-                return ERROR_IO;
+                err = ERROR_IO;
+                goto avcC_parse_fail;
             }
 
             mLastTrack->meta->setData(
                     kKeyAVCC, kTypeAVCC, buffer, chunk_data_size);
+
+avcC_parse_fail: //do memory cleanup
+            delete [] buffer;
+            if (err != OK)
+                return err;
 
             *offset += chunk_size;
             break;
@@ -1050,6 +1086,8 @@ status_t MPEG4Extractor::parseChunk(off_t *offset, int depth) {
             break;
         }
 
+        case FOURCC('s', 'k', 'i' ,'p'):
+        //Fall through; we can completely ignore this atom
         default:
         {
             *offset += chunk_size;
@@ -1302,10 +1340,6 @@ status_t MPEG4Extractor::updateAudioTrackInfoFromESDS_MPEG4Audio(
 
         sampleRate = kSamplingRate[freqIndex];
         numChannels = (csd[1] >> 3) & 15;
-    }
-
-    if (numChannels == 0) {
-        return ERROR_UNSUPPORTED;
     }
 
     int32_t prevSampleRate;
