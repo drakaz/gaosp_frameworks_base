@@ -1499,4 +1499,12 @@ public class GpsLocationProvider implements LocationProviderInterface {
     private native void native_set_supl_server(int addr, int port);
     private native void native_set_supl_apn(String apn);
 
+    // AGPS Support
+    private native void native_agps_data_conn_open(String apn);
+    private native void native_agps_data_conn_closed();
+    private native void native_agps_data_conn_failed();
+    private native void native_set_agps_server(int type, String hostname, int port);
+
+    // Network-initiated (NI) Support
+    private native void native_send_ni_response(int notificationId, int userResponse);
 }
