@@ -23,7 +23,6 @@
     <array name="shutdown_reboot_options">
         <item>再起動</item>
         <item>リカバリ</item>
-        <item>ブートローダ</item>
     </array>
 
 </resources>
