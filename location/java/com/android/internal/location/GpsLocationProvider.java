@@ -663,6 +663,8 @@ public class GpsLocationProvider implements LocationProviderInterface {
         mEnabled = native_init();
 
         if (mEnabled) {
+            mSupportsXtra = native_supports_xtra();
+            if (DEBUG) Log.d(TAG, "mSupportsXtra : "+mSupportsXtra);
             if (mSuplServerHost != null) {
                 native_set_agps_server(AGPS_TYPE_SUPL, mSuplServerHost, mSuplServerPort);
             }
