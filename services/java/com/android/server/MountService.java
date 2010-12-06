@@ -865,7 +865,7 @@ class MountService extends IMountService.Stub
         }
 
         final String path = Environment.getExternalStorageDirectory().getPath();
-        final String path_ext = Environment.getExternalSdDirectory().getPath();
+	final String path_ext = Environment.getExternalStorage2Directory().getPath();
         if (avail == false && getVolumeState(path).equals(Environment.MEDIA_SHARED)) {
             /*
              * USB mass storage disconnected while enabled
@@ -970,7 +970,7 @@ class MountService extends IMountService.Stub
         Slog.i(TAG, "Shutting down");
 
         String path = Environment.getExternalStorageDirectory().getPath();
-	String path_ext = Environment.getExternalSdDirectory().getPath();
+	String path_ext = Environment.getExternalStorage2Directory().getPath();
         String state = getVolumeState(path);
         String state_ext = getVolumeState(path_ext);
 
@@ -1116,7 +1116,12 @@ class MountService extends IMountService.Stub
 
     public boolean isUsbMassStorageEnabled() {
         waitForReady();
-        return doGetVolumeShared(Environment.getExternalStorageDirectory().getPath(), "ums");
+        //return doGetVolumeShared(Environment.getExternalStorageDirectory().getPath(), "ums");
+        if (doGetVolumeShared(Environment.getExternalStorageDirectory().getPath(), "ums") || doGetVolumeShared(Environment.ge
+       		return true;
+        } else {
+        	return false;
+        }
     }
     
     /**
