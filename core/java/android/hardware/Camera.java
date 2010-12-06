@@ -946,6 +946,7 @@ public class Camera {
 	private static final String KEY_IMAGE_STABILIZATION_CONTROL = "image-stabilization-control" ;
 	private static final String KEY_FACE_DETECTION = "face-detection" ;
 	private static final String KEY_AEWB_LOCK = "aewb-lock" ;
+        private static final String KEY_CAF = "continuous-af";
         
         // Parameter key suffix for supported values.
         private static final String SUPPORTED_VALUES_SUFFIX = "-values";
@@ -1088,6 +1089,11 @@ public class Camera {
         private static final String PIXEL_FORMAT_YUV422I = "yuv422i-yuyv";
         private static final String PIXEL_FORMAT_RGB565 = "rgb565";
         private static final String PIXEL_FORMAT_JPEG = "jpeg";
+
+        //Values for Continuous AF
+
+        public static final String CAF_OFF = "caf-off";
+        public static final String CAF_ON = "caf-on";
 
         private HashMap<String, String> mMap;
 
@@ -2270,6 +2276,38 @@ public class Camera {
          */
         public List<String> getSupportedAutoexposure() {
             String str = get(KEY_AUTO_EXPOSURE + SUPPORTED_VALUES_SUFFIX);
+            return split(str);
+        }
+
+        /**
+         * Gets the current Continuous AF setting.
+         *
+         * @return one of CONTINUOUS_AF_XXX string constant. null if continuous AF
+         *         setting is not supported.
+         *
+         */
+        public String getContinuousAf() {
+            return get(KEY_CAF);
+        }
+
+        /**
+         * Sets the current Continuous AF mode.
+         * @param value CONTINUOUS_AF_XXX string constants.
+         *
+         */
+        public void setContinuousAf(String value) {
+            set(KEY_CAF, value);
+        }
+
+        /**
+         * Gets the supported Continuous AF modes.
+         *
+         * @return a List of CONTINUOUS_AF_XXX string constant. null if continuous AF
+         *         setting is not supported.
+         *
+         */
+        public List<String> getSupportedContinuousAfModes() {
+            String str = get(KEY_CAF + SUPPORTED_VALUES_SUFFIX);
             return split(str);
         }
 

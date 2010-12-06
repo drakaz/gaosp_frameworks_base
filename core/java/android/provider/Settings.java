@@ -2254,6 +2254,12 @@ public final class Settings {
         public static final String LOCKSCREEN_PHONE_MESSAGING_TAB = "lockscreen_phone_messaging_tab";
 
         /**
+         * App to launch with the custom messaging tab
+         * @hide
+         */
+        public static final String LOCKSCREEN_MESSAGING_TAB_APP = "lockscreen_messaging_tab_app";
+
+        /**
          * Whether to use a custom pull-down notification screen
          * @hide 
          */
@@ -2270,6 +2276,12 @@ public final class Settings {
          * @hide
          */
         public static final String EXPANDED_VIEW_WIDGET = "expanded_view_widget";
+
+        /**
+         * Whether to hide the notification screen after clicking on a widget button
+         * @hide
+         */
+        public static final String EXPANDED_HIDE_ONCHANGE = "expanded_hide_onchange";
 
         /**
          * Notification Indicator Color
@@ -2372,6 +2384,36 @@ public final class Settings {
         public static final String OVERSCROLL_WEIGHT = "overscroll_weight";
 
         /**
+         * Whether to listen for gestures on the lockscreen
+         * @hide
+         */
+        public static final String LOCKSCREEN_GESTURES_ENABLED = "lockscreen_gestures_enabled";
+
+        /**
+         * Whether to show the gesture trail on the lockscreen
+         * @hide
+         */
+        public static final String LOCKSCREEN_GESTURES_TRAIL = "lockscreen_gestures_trail";
+
+        /**
+         * Sensitivity for parsing gestures on the lockscreen
+         * @hide
+         */
+        public static final String LOCKSCREEN_GESTURES_SENSITIVITY = "lockscreen_gestures_sensitivity";
+
+        /**
+         * Color value for gestures on lockscreen
+         * @hide
+         */
+        public static final String LOCKSCREEN_GESTURES_COLOR = "lockscreen_gestures_color";
+
+        /**
+         * Torch state (flashlight)
+         * @hide
+         */
+        public static final String TORCH_STATE = "torch_state";
+
+        /**
          * Settings to backup. This is here so that it's in the same place as the settings
          * keys and easy to update.
          * @hide
@@ -2453,6 +2495,8 @@ public final class Settings {
             QUIET_HOURS_STILL,
             QUIET_HOURS_DIM,
             MY_SMSC_NUMBER
+            LOCKSCREEN_GESTURES_SENSITIVITY,
+            LOCKSCREEN_GESTURES_COLOR
         };
 
         // Settings moved to Settings.Secure
@@ -2684,6 +2728,7 @@ public final class Settings {
         @Deprecated
         public static final String WIFI_WATCHDOG_PING_TIMEOUT_MS =
             Secure.WIFI_WATCHDOG_PING_TIMEOUT_MS;
+
     }
 
     /**
@@ -4159,7 +4204,19 @@ public final class Settings {
          * @hide
          */
         public static final String KILL_APP_LONGPRESS_BACK = "kill_app_on_longpress_back";
-        
+
+        /**
+         * Virtual network roaming
+         * @hide
+         */
+        public static final String MVNO_ROAMING = "button_mvno_roaming_key";
+
+        /**
+         * Whether to disable the lockscreen unlock tab
+         * @hide
+         */
+        public static final String LOCKSCREEN_GESTURES_DISABLE_UNLOCK = "lockscreen_gestures_disable_unlock";
+
         /**
          * @hide
          */
