@@ -2494,7 +2494,7 @@ public final class Settings {
             QUIET_HOURS_MUTE,
             QUIET_HOURS_STILL,
             QUIET_HOURS_DIM,
-            MY_SMSC_NUMBER
+            MY_SMSC_NUMBER,
             LOCKSCREEN_GESTURES_SENSITIVITY,
             LOCKSCREEN_GESTURES_COLOR
         };

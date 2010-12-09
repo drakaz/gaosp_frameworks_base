@@ -1117,7 +1117,7 @@ class MountService extends IMountService.Stub
     public boolean isUsbMassStorageEnabled() {
         waitForReady();
         //return doGetVolumeShared(Environment.getExternalStorageDirectory().getPath(), "ums");
-        if (doGetVolumeShared(Environment.getExternalStorageDirectory().getPath(), "ums") || doGetVolumeShared(Environment.ge
+        if (doGetVolumeShared(Environment.getExternalStorageDirectory().getPath(), "ums") || doGetVolumeShared(Environment.getExternalStorage2Directory().getPath(), "ums")) {
        		return true;
         } else {
         	return false;

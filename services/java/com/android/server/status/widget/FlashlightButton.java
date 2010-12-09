@@ -1,12 +1,26 @@
 package com.android.server.status.widget;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import com.android.internal.R;
 import com.android.server.status.widget.PowerButton;
-
 import android.content.ContentResolver;
 import android.content.Context;
-import android.content.Intent;
+import android.util.Log;
+import android.os.Build;
 import android.provider.Settings;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.lang.Thread;
+import java.lang.Runnable;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 
 public class FlashlightButton extends PowerButton {
 
@@ -70,11 +84,11 @@ public class FlashlightButton extends PowerButton {
     }
 
     public void toggleState(Context context) {
-        boolean bright = Settings.System.getInt(context.getContentResolver(),
-                Settings.System.EXPANDED_FLASH_MODE, 0) == 1;
-        Intent i = new Intent("net.cactii.flash2.TOGGLE_FLASHLIGHT");
-        i.putExtra("bright", bright);
-        mContext.sendBroadcast(new Intent("net.cactii.flash2.TOGGLE_FLASHLIGHT"));
+        currentMode = Settings.System.getInt(context.getContentResolver(), Settings.System.EXPANDED_FLASH_MODE,
+                    MODE_DEFAULT);
+        boolean enabled = getFlashlightEnabled();
+        runTimer = !enabled;
+        setFlashlightEnabled(!enabled);
     }
 
     public static FlashlightButton getInstance() {
@@ -118,6 +132,19 @@ public class FlashlightButton extends PowerButton {
         flashTimer timerRun = new flashTimer();
         threadExecutor.execute(timerRun);
     }
+    
+    public class flashTimer implements Runnable {
+        public flashTimer() {
+        }
+        public void run() {
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+            }
+            setFlashlightEnabled(runTimer);
+        }
+    }
+
 
     @Override
     void initButton(int position) {
