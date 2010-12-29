@@ -42,6 +42,7 @@ import android.util.Slog;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.io.File;
 
 /**
  * MountService implements back-end services for platform storage
@@ -865,7 +866,7 @@ class MountService extends IMountService.Stub
         }
 
         final String path = Environment.getExternalStorageDirectory().getPath();
-	final String path_ext = Environment.getExternalStorage2Directory().getPath();
+		final String path_ext = Environment.getExternalStorage2Directory().getPath();
         if (avail == false && getVolumeState(path).equals(Environment.MEDIA_SHARED)) {
             /*
              * USB mass storage disconnected while enabled
@@ -1062,8 +1063,11 @@ class MountService extends IMountService.Stub
         // This is a semicolon delimited list of paths. Such as "/emmc;/foo", etc.
         ArrayList<String> volumesToMount = new ArrayList<String>();
         volumesToMount.add(Environment.getExternalStorageDirectory().getPath());
-        volumesToMount.add(Environment.getExternalStorage2Directory().getPath());
-        volumesToMount.add(Environment.getExternalSdDirectory().getPath());
+        
+        // Check for external sd and add it to share list if exist
+        if ((new File("/dev/block/mmcblk1p1")).exists()) {
+			 volumesToMount.add(Environment.getExternalStorage2Directory().getPath());
+        }
         String additionalVolumesProperty = SystemProperties.get("ro.additionalmounts");
         if (null != additionalVolumesProperty) {
             String[] additionalVolumes = additionalVolumesProperty.split(";");
