@@ -36,6 +36,8 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.os.RemoteException;
+import android.os.IBinder;
+import android.os.Environment;
 import android.os.ServiceManager;
 import android.os.SystemClock;
 import android.os.SystemProperties;
@@ -1126,9 +1128,11 @@ class MountService extends IMountService.Stub
         Slog.i(TAG, "Shutting down");
 
         String path = Environment.getExternalStorageDirectory().getPath();
+	String path_ext = Environment.getExternalStorage2Directory().getPath();
         String state = getVolumeState(path);
+        String state_ext = getVolumeState(path_ext);
 
-        if (state.equals(Environment.MEDIA_SHARED)) {
+        if ((state.equals(Environment.MEDIA_SHARED)) && (state_ext.equals(Environment.MEDIA_SHARED))) {
             /*
              * If the media is currently shared, unshare it.
              * XXX: This is still dangerous!. We should not
@@ -1137,7 +1141,7 @@ class MountService extends IMountService.Stub
              * yet to flush.
              */
             setUsbMassStorageEnabled(false);
-        } else if (state.equals(Environment.MEDIA_CHECKING)) {
+        } else if ((state.equals(Environment.MEDIA_CHECKING)) || (state_ext.equals(Environment.MEDIA_CHECKING))) {
             /*
              * If the media is being checked, then we need to wait for
              * it to complete before being able to proceed.
@@ -1207,6 +1211,10 @@ class MountService extends IMountService.Stub
         // This is a semicolon delimited list of paths. Such as "/emmc;/foo", etc.
         ArrayList<String> volumesToMount = new ArrayList<String>();
         volumesToMount.add(Environment.getExternalStorageDirectory().getPath());
+        // Check for external sd and add it to share list if exist
+        if ((new File("/dev/block/mmcblk1p1")).exists()) {
+			 volumesToMount.add(Environment.getExternalStorage2Directory().getPath());
+        }
         String additionalVolumesProperty = SystemProperties.get("ro.additionalmounts");
         if (null != additionalVolumesProperty) {
             String[] additionalVolumes = additionalVolumesProperty.split(";");
@@ -1263,8 +1271,12 @@ class MountService extends IMountService.Stub
 
     public boolean isUsbMassStorageEnabled() {
         waitForReady();
-        return doGetVolumeShared(Environment.getExternalStorageDirectory().getPath(), "ums");
-    }
+        //return doGetVolumeShared(Environment.getExternalStorageDirectory().getPath(), "ums");
+        if (doGetVolumeShared(Environment.getExternalStorageDirectory().getPath(), "ums") || doGetVolumeShared(Environment.getExternalStorage2Directory().getPath(), "ums")) {
+       		return true;
+        } else {
+        	return false;
+        }    }
     
     /**
      * @return state of the volume at the specified mount point
