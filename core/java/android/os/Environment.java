@@ -169,6 +169,7 @@ public class Environment {
      * computer, has been removed from the device, or some other problem has
      * happened.  You can determine its current state with
      * {@link #getExternalStorageState()}.
+     * @hide
      */
     public static File getExternalSdDirectory() {
         return EXTERNAL_STORAGE2_DIRECTORY;
