@@ -1540,6 +1540,13 @@ public final class RIL extends BaseCommands implements CommandsInterface {
 
     public void
     getAvailableNetworks(Message response) {
+
+// drakaz : deactivate data call before scanning for network (consider 25 cid)
+    Message DeactivateDataCallMessage = null;
+    for(int DeactivateDataCallCid = 0; DeactivateDataCallCid < 5; DeactivateDataCallCid++) {
+   	deactivateDataCall(DeactivateDataCallCid,DeactivateDataCallMessage);
+    }
+ 
         RILRequest rr
                 = RILRequest.obtain(RIL_REQUEST_QUERY_AVAILABLE_NETWORKS,
                                     response);
@@ -2932,7 +2939,8 @@ public final class RIL extends BaseCommands implements CommandsInterface {
         String strings[] = (String [])responseStrings(p);
         ArrayList<NetworkInfo> ret;
 
-        if (strings.length % 4 != 0) {
+// drakaz : scanning radio network patch
+        if (strings.length % 5 != 0) {
             throw new RuntimeException(
                 "RIL_REQUEST_QUERY_AVAILABLE_NETWORKS: invalid response. Got "
                 + strings.length + " strings, expected multible of 4");
