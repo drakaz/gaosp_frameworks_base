@@ -1055,6 +1055,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     
             loadBooleanSetting(stmt, Settings.System.ACCELEROMETER_ROTATION,
                     R.bool.def_accelerometer_rotation);
+
+            loadBooleanSetting(stmt, Settings.System.THROTTLE_PROXIMITY_SENSOR,
+                    R.bool.def_throttle_proximity_sensor);
     
             loadDefaultHapticSettings(stmt);
     
@@ -1068,6 +1071,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     
             loadBooleanSetting(stmt, Settings.System.VIBRATE_IN_SILENT,
                     R.bool.def_vibrate_in_silent);
+
         } finally {
             if (stmt != null) stmt.close();
         }

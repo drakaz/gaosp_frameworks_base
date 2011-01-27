@@ -72,4 +72,7 @@
 
     <!-- Default for Settings.System.VIBRATE_IN_SILENT -->
     <bool name="def_vibrate_in_silent">true</bool>
+
+    <!-- Default for Settings.System.THROTTLE_PROXIMITY_SENSOR -->
+    <bool name="def_throttle_proximity_sensor">true</bool>
 </resources>

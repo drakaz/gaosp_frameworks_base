@@ -1734,6 +1734,12 @@ public final class Settings {
         public static final String ACCELEROMETER_ROTATE_180 = "accelerometer_rotate_180";
 
         /**
+         * Whether to use or not the proximity sensor
+         * @hide
+         */
+        public static final String THROTTLE_PROXIMITY_SENSOR =  "throttle_proximity_sensor";
+        
+        /**
          * Specifies the number of recent apps to show (8, 12, 16)
          * @hide
          */
