@@ -401,6 +401,7 @@ public class KeyEvent extends InputEvent implements Parcelable {
      * @hide
      */
     public static final int KEYCODE_USER5           = 96;
+    public static final int KEYCODE_HOLD            = 152;
 
     // NOTE: If you add a new keycode here you must also add it to:
     //  isSystem()
