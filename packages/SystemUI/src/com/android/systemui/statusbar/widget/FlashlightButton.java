@@ -1,4 +1,3 @@
-
 package com.android.systemui.statusbar.widget;
 
 import com.android.systemui.R;
@@ -10,6 +9,19 @@ import android.provider.Settings;
 public class FlashlightButton extends PowerButton {
 
     static FlashlightButton ownButton;
+    public static native String openFlash() ;
+    public static native String closeFlash() ;
+    public static native String setFlashOn() ;
+    public static native String setFlashOff() ;
+
+    private boolean opened = false;
+    private boolean mFlashEnabled = false;
+
+    // Load libflash once on app startup.
+    static {
+    	System.loadLibrary("jni_flashwidget");	
+	}
+
 
     public void updateState(Context context) {
         boolean enabled = Settings.System.getInt(context.getContentResolver(), Settings.System.TORCH_STATE, 0) == 1;
@@ -25,9 +37,13 @@ public class FlashlightButton extends PowerButton {
     public void toggleState(Context context) {
         boolean bright = Settings.System.getInt(context.getContentResolver(),
                 Settings.System.EXPANDED_FLASH_MODE, 0) == 1;
-        Intent i = new Intent("net.cactii.flash2.TOGGLE_FLASHLIGHT");
-        i.putExtra("bright", bright);
-        context.sendBroadcast(new Intent("net.cactii.flash2.TOGGLE_FLASHLIGHT"));
+	if (bright) {
+		openFlash();
+		setFlashOn();
+	} else {
+                setFlashOff();
+                closeFlash();
+	}
     }
 
     public static FlashlightButton getInstance() {
@@ -37,3 +53,4 @@ public class FlashlightButton extends PowerButton {
     }
 
 }
+
