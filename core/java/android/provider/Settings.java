@@ -2310,6 +2310,11 @@ public final class Settings {
          */
         public static final String OVERSCROLL_WEIGHT = "overscroll_weight";
 
+        /**
+         * SMSC when using another smsc than default .
+         * @hide
+         */
+        public static final String MY_SMSC_NUMBER = "my_smsc_number";
 
         /**
          * Settings to backup. This is here so that it's in the same place as the settings
@@ -2395,8 +2400,7 @@ public final class Settings {
             HAPTIC_LONG_ARRAY_DEFAULT,
             HAPTIC_TAP_ARRAY,
             HAPTIC_TAP_ARRAY_DEFAULT,
-            LOCKSCREEN_GESTURES_SENSITIVITY,
-            LOCKSCREEN_GESTURES_COLOR
+            MY_SMSC_NUMBER
         };
 
         // Settings moved to Settings.Secure
