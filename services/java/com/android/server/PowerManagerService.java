@@ -1029,6 +1029,24 @@ class PowerManagerService extends IPowerManager.Stub
                 if (LOG_PARTIAL_WL) EventLog.writeEvent(EventLogTags.POWER_PARTIAL_WAKE_STATE, 0, wl.tag);
                 Power.releaseWakeLock(PARTIAL_NAME);
             }
+        } else if ((wl.flags & LOCK_MASK) == PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK) {
+            mProximityWakeLockCount--;
+            if (mProximityWakeLockCount == 0) {
+               // Workaround for users who have screen wake up issue after a call
+               // -> always disable proximity sensor after a call
+                /* if (mProximitySensorActive &&
+                        ((flags & PowerManager.WAIT_FOR_PROXIMITY_NEGATIVE) != 0)) {
+                    // wait for proximity sensor to go negative before disabling sensor
+                    if (mDebugProximitySensor) {
+                        Slog.d(TAG, "waiting for proximity sensor to go negative");
+                    }
+                } else {
+                */
+                    disableProximityLockLocked();
+                /*
+                }
+                */
+            }
         }
         // Unlink the lock from the binder.
         wl.binder.unlinkToDeath(wl, 0);
