@@ -23,7 +23,6 @@
     <array name="shutdown_reboot_options">
         <item>다시 시작</item>
         <item>복구 모드</item>
-        <item>부트로더</item>
     </array>
 
 </resources>

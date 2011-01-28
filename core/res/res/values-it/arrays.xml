@@ -25,7 +25,6 @@
     <array name="shutdown_reboot_options">
         <item>Riavvia</item>
         <item>Recovery</item>
-        <item>Bootloader</item>
     </array>
 
 

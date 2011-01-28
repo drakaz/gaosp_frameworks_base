@@ -22,6 +22,5 @@
     <array name="shutdown_reboot_options">
         <item>Neu starten</item>
         <item>Recovery</item>
-        <item>Bootloader</item>
     </array>
 </resources>
