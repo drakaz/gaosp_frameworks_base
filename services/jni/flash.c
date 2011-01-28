@@ -14,8 +14,7 @@
 int dev;
 int led_mode;
 int ioctlRetVal = 1;
-
-JNIEXPORT jstring JNICALL Java_com_android_server_status_widget_FlashlightButton_openFlash(JNIEnv* env)
+JNIEXPORT jstring JNICALL Java_com_android_systemui_statusbar_widget_FlashlightButton_openFlash(JNIEnv* env)
 {
   LOGD("opening /dev/msm_camera/msm_camera0") ;
   dev = open("/dev/msm_camera/msm_camera0", O_RDWR);
@@ -27,7 +26,7 @@ JNIEXPORT jstring JNICALL Java_com_android_server_status_widget_FlashlightButton
   return (*env)->NewStringUTF(env, "OK");
 }
 
-JNIEXPORT jstring JNICALL Java_com_android_server_status_widget_FlashlightButton_setFlashOff(JNIEnv *env)
+JNIEXPORT jstring JNICALL Java_com_android_systemui_statusbar_widget_FlashlightButton_setFlashOff(JNIEnv *env)
 {
   LOGD("setFlashOff") ;
     ioctl_msg_info ctrl_info;
@@ -42,7 +41,7 @@ JNIEXPORT jstring JNICALL Java_com_android_server_status_widget_FlashlightButton
   return (*env)->NewStringUTF(env, "OK");
 }
 
-JNIEXPORT jstring JNICALL Java_com_android_server_status_widget_FlashlightButton_setFlashOn(JNIEnv *env)
+JNIEXPORT jstring JNICALL Java_com_android_systemui_statusbar_widget_FlashlightButton_setFlashOn(JNIEnv *env)
 {
   LOGD("setFlashOn") ;
 
@@ -58,7 +57,7 @@ JNIEXPORT jstring JNICALL Java_com_android_server_status_widget_FlashlightButton
   return (*env)->NewStringUTF(env, "OK");
 }
 
-JNIEXPORT jstring JNICALL Java_com_android_server_status_widget_FlashlightButton_closeFlash(JNIEnv *env)
+JNIEXPORT jstring JNICALL Java_com_android_systemui_statusbar_widget_FlashlightButton_closeFlash(JNIEnv *env)
 {
   LOGD("closing device") ;
   if (dev > 0) {

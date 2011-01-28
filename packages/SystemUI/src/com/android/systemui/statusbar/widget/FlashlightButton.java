@@ -35,15 +35,16 @@ public class FlashlightButton extends PowerButton {
     }
 
     public void toggleState(Context context) {
-        boolean bright = Settings.System.getInt(context.getContentResolver(),
-                Settings.System.EXPANDED_FLASH_MODE, 0) == 1;
-	if (bright) {
-		openFlash();
-		setFlashOn();
-	} else {
-                setFlashOff();
-                closeFlash();
-	}
+		boolean enabled = Settings.System.getInt(context.getContentResolver(), Settings.System.TORCH_STATE, 0) == 1;
+		if (!enabled) {
+			openFlash();
+			setFlashOn();
+			Settings.System.putInt(context.getContentResolver(), Settings.System.TORCH_STATE, 1);
+		} else {
+			setFlashOff();
+			closeFlash();
+			Settings.System.putInt(context.getContentResolver(), Settings.System.TORCH_STATE, 0);
+		}
     }
 
     public static FlashlightButton getInstance() {
