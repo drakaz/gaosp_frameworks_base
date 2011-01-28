@@ -48,5 +48,5 @@ LOCAL_MODULE := libjni_flashwidget
 LOCAL_C_INCLUDES += $(JNI_H_INCLUDE)
 LOCAL_PRELINK_MODULE := false
 LOCAL_SHARED_LIBRARIES := libutils liblog
-LOCAL_MODULE_TAGS := optionnal
+LOCAL_MODULE_TAGS := optional
 include $(BUILD_SHARED_LIBRARY)    
