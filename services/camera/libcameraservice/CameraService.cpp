@@ -584,7 +584,17 @@ status_t CameraService::Client::registerPreviewBuffers() {
                                  HAL_PIXEL_FORMAT_YCrCb_420_SP,
                                  mOrientation,
                                  0,
+#ifdef USE_CUPCAKE_CHOCOLATE_CAMERA
+				 mHardware->getPreviewHeap(0),
+			 	 mHardware->getPreviewHeap(1),
+				 mHardware->getPreviewHeap(2),
+				 mHardware->getPreviewHeap(3));
+    for(int i = 0; i < 4; i++ ) {
+        mHeapBase[i] = mHardware->getPreviewHeap(i)->base() ; 
+    }
+#else
                                  mHardware->getPreviewHeap());
+#endif
 
     status_t result = mSurface->registerBuffers(buffers);
     if (result != NO_ERROR) {
@@ -1140,7 +1150,13 @@ void CameraService::Client::handlePreviewData(const sp<IMemory>& mem) {
     ssize_t offset;
     size_t size;
     sp<IMemoryHeap> heap = mem->getMemory(&offset, &size);
-
+#ifdef USE_CUPCAKE_CHOCOLATE_CAMERA
+    for(int i = 0; i < 4; i++ ) {
+        if( mHeapBase[i] == heap->base() ) {
+            offset = i ;
+        }
+    }
+#endif
     if (!mUseOverlay) {
         if (mSurface != 0) {
             mSurface->postBuffer(offset);

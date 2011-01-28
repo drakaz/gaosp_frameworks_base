@@ -88,7 +88,12 @@ public:
     virtual ~CameraHardwareInterface() { }
 
     /** Return the IMemoryHeap for the preview image heap */
+#ifdef USE_CUPCAKE_CHOCOLATE_CAMERA
+    virtual sp<IMemoryHeap>         getPreviewHeap(int32_t i) const = 0;
+#else
     virtual sp<IMemoryHeap>         getPreviewHeap() const = 0;
+#endif
+
 
     /** Return the IMemoryHeap for the raw image heap */
     virtual sp<IMemoryHeap>         getRawHeap() const = 0;

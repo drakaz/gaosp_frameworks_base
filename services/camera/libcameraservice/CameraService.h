@@ -180,6 +180,9 @@ private:
         int                             mOrientation;     // Current display orientation
         // True if display orientation has been changed. This is only used in overlay.
         int                             mOrientationChanged;
+#ifdef USE_CUPCAKE_CHOCOLATE_CAMERA
+	void*				mHeapBase[4];
+#endif
 
         // Ensures atomicity among the public methods
         mutable Mutex                   mLock;

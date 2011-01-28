@@ -32,6 +32,11 @@
 
 namespace android {
 
+#define NUM_SF_BUFFERS 4
+enum {
+    SINGLE_HEAP,
+    MULTI_HEAP
+};
 typedef int32_t    SurfaceID;
 
 class IMemoryHeap;
@@ -90,6 +95,15 @@ public:
                 int32_t hor_stride, int32_t ver_stride, 
                 PixelFormat format, uint32_t transform, uint32_t flags,
                 const sp<IMemoryHeap>& heap);
+
+        BufferHeap(uint32_t w, uint32_t h,
+	        int32_t hor_stride, int32_t ver_stride,
+		PixelFormat format, uint32_t transform, uint32_t flags,
+		const sp<IMemoryHeap>& heap0, const sp<IMemoryHeap>& heap1,
+		const sp<IMemoryHeap>& heap2, const sp<IMemoryHeap>& heap3);
+
+	uint32_t htype;
+	sp<IMemoryHeap> heaps[NUM_SF_BUFFERS];
         
         ~BufferHeap(); 
         
