@@ -2108,16 +2108,16 @@ public final class Settings {
             "lockscreen_quick_unlock_control";
 
         /**
-         * Whether to use the custom Phone and Messaging SlidingTab
+         * Whether to use the custom app on both slider style and rotary style
          * @hide
          */
-        public static final String LOCKSCREEN_PHONE_MESSAGING_TAB = "lockscreen_phone_messaging_tab";
+        public static final String LOCKSCREEN_CUSTOM_APP_TOGGLE = "lockscreen_custom_app_toggle";
 
         /**
-         * App to launch with the custom messaging tab
+         * App to launch with custom app toggle enabled
          * @hide
          */
-        public static final String LOCKSCREEN_MESSAGING_TAB_APP = "lockscreen_messaging_tab_app";
+        public static final String LOCKSCREEN_CUSTOM_APP_ACTIVITY = "lockscreen_custom_app_activity";
 
         /**
          * Sets the lockscreen style
@@ -2222,13 +2222,19 @@ public final class Settings {
         public static final String LOCKSCREEN_ALWAYS_BATTERY = "lockscreen_always_battery";
 
         /**
-         * Whether to use custom notification bar
+         * Whether to use lockscreen music controls
          * @hide
          */
         public static final String LOCKSCREEN_MUSIC_CONTROLS = "lockscreen_music_controls";
 
         /**
-         * Whether to use custom notification bar
+         * Whether to use lockscreen music controls with headset connected
+         * @hide
+         */
+        public static final String LOCKSCREEN_MUSIC_CONTROLS_HEADSET = "lockscreen_music_controls_headset";
+
+        /**
+         * Whether to use always use lockscreen music controls
          * @hide
          */
         public static final String LOCKSCREEN_ALWAYS_MUSIC_CONTROLS = "lockscreen_always_music_controls";
@@ -2321,6 +2327,18 @@ public final class Settings {
          * @hide
          */
         public static final String MY_SMSC_NUMBER = "my_smsc_number";
+	
+	/**
+         * Whether or not volume button music controls should be enabled to seek media tracks
+         * @hide
+         */
+        public static final String VOLBTN_MUSIC_CONTROLS = "volbtn_music_controls";
+
+        /**
+         * Whether or not camera button music controls should be enabled to play/pause media tracks
+         * @hide
+         */
+        public static final String CAMBTN_MUSIC_CONTROLS = "cambtn_music_controls";
 
         /**
          * Whether the phone goggles mode is enabled or not.
