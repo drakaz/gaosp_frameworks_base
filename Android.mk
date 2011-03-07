@@ -83,6 +83,7 @@ LOCAL_SRC_FILES += \
 	core/java/android/app/IBackupAgent.aidl \
 	core/java/android/app/IInstrumentationWatcher.aidl \
 	core/java/android/app/INotificationManager.aidl \
+	core/java/android/app/IProfileManager.aidl \
 	core/java/android/app/ISearchManager.aidl \
 	core/java/android/app/ISearchManagerCallback.aidl \
 	core/java/android/app/IServiceConnection.aidl \
@@ -120,11 +121,11 @@ LOCAL_SRC_FILES += \
 	core/java/android/nfc/ILlcpConnectionlessSocket.aidl \
 	core/java/android/nfc/ILlcpServiceSocket.aidl \
 	core/java/android/nfc/ILlcpSocket.aidl \
-	core/java/android/nfc/INdefTag.aidl \
 	core/java/android/nfc/INfcAdapter.aidl \
 	core/java/android/nfc/INfcTag.aidl \
 	core/java/android/nfc/IP2pInitiator.aidl \
 	core/java/android/nfc/IP2pTarget.aidl \
+    core/java/android/nfc/INfcSecureElement.aidl \
 	core/java/android/os/IHardwareService.aidl \
 	core/java/android/os/IMessenger.aidl \
 	core/java/android/os/INetworkManagementService.aidl \
@@ -241,6 +242,8 @@ aidl_files := \
 	frameworks/base/core/java/android/accounts/IAccountAuthenticator.aidl \
 	frameworks/base/core/java/android/accounts/IAccountAuthenticatorResponse.aidl \
 	frameworks/base/core/java/android/app/Notification.aidl \
+	frameworks/base/core/java/android/app/NotificationGroup.aidl \
+	frameworks/base/core/java/android/app/Profile.aidl \
 	frameworks/base/core/java/android/app/PendingIntent.aidl \
 	frameworks/base/core/java/android/bluetooth/BluetoothDevice.aidl \
 	frameworks/base/core/java/android/content/ComponentName.aidl \
@@ -254,7 +257,6 @@ aidl_files := \
 	frameworks/base/core/java/android/nfc/NdefMessage.aidl \
 	frameworks/base/core/java/android/nfc/NdefRecord.aidl \
 	frameworks/base/core/java/android/nfc/Tag.aidl \
-	frameworks/base/core/java/android/nfc/NdefTag.aidl \
 	frameworks/base/core/java/android/os/Bundle.aidl \
 	frameworks/base/core/java/android/os/DropBoxManager.aidl \
 	frameworks/base/core/java/android/os/ParcelFileDescriptor.aidl \
@@ -376,6 +378,7 @@ framework_docs_LOCAL_DROIDDOC_OPTIONS := \
     -since ./frameworks/base/api/7.xml 7 \
     -since ./frameworks/base/api/8.xml 8 \
     -since ./frameworks/base/api/9.xml 9 \
+    -since ./frameworks/base/api/10.xml 10 \
     -werror -hide 13 \
     -overview $(LOCAL_PATH)/core/java/overview.html
 
@@ -394,6 +397,8 @@ web_docs_sample_code_flags := \
 		            resources/samples/AccessibilityService "Accessibility Service" \
 		-samplecode $(sample_dir)/ApiDemos \
 		            resources/samples/ApiDemos "API Demos" \
+		-samplecode $(sample_dir)/AccelerometerPlay \
+		            resources/samples/AccelerometerPlay "Accelerometer Play" \
 		-samplecode $(sample_dir)/BackupRestore \
 		            resources/samples/BackupRestore "Backup and Restore" \
 		-samplecode $(sample_dir)/BluetoothChat \
@@ -406,8 +411,6 @@ web_docs_sample_code_flags := \
                             resources/samples/CubeLiveWallpaper "Live Wallpaper" \
 		-samplecode $(sample_dir)/Home \
 		            resources/samples/Home "Home" \
-		-samplecode $(sample_dir)/HeavyWeight \
-		            resources/samples/HeavyWeight "Heavy Weight App" \
 		-samplecode $(sample_dir)/JetBoy \
 		            resources/samples/JetBoy "JetBoy" \
 		-samplecode $(sample_dir)/LunarLander \
@@ -449,7 +452,7 @@ framework_docs_SDK_VERSION:=2.3
   # release version (ie "Release x")  (full releases only)
 framework_docs_SDK_REL_ID:=1
   # flag to build offline docs for a preview release
-framework_docs_SDK_PREVIEW:=0
+framework_docs_SDK_PREVIEW:=true
 
 framework_docs_LOCAL_DROIDDOC_OPTIONS += \
 		-hdf sdk.version $(framework_docs_SDK_VERSION) \
@@ -576,6 +579,10 @@ LOCAL_DROIDDOC_OPTIONS:= \
 		-toroot / \
 		-hdf android.whichdoc online \
 		-hdf template.showLanguageMenu true
+
+ifeq ($(framework_docs_SDK_PREVIEW),true)
+  LOCAL_DROIDDOC_OPTIONS += -hdf sdk.preview true
+endif
 
 LOCAL_DROIDDOC_CUSTOM_TEMPLATE_DIR:=build/tools/droiddoc/templates-sdk
 LOCAL_DROIDDOC_CUSTOM_ASSET_DIR:=assets-sdk

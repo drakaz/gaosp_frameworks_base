@@ -77,6 +77,7 @@ import android.net.IThrottleManager;
 import android.net.Uri;
 import android.net.wifi.IWifiManager;
 import android.net.wifi.WifiManager;
+import android.nfc.NfcManager;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.DropBoxManager;
@@ -192,6 +193,7 @@ class ContextImpl extends Context {
     private Resources.Theme mTheme = null;
     private PackageManager mPackageManager;
     private NotificationManager mNotificationManager = null;
+    private ProfileManager mProfileManager = null;
     private ActivityManager mActivityManager = null;
     private WallpaperManager mWallpaperManager = null;
     private Context mReceiverRestrictedContext = null;
@@ -209,6 +211,7 @@ class ContextImpl extends Context {
     private DevicePolicyManager mDevicePolicyManager = null;
     private UiModeManager mUiModeManager = null;
     private DownloadManager mDownloadManager = null;
+    private NfcManager mNfcManager = null;
 
     private final Object mSync = new Object();
 
@@ -389,7 +392,8 @@ class ContextImpl extends Context {
             }
 
             Map map = null;
-            if (prefsFile.exists() && prefsFile.canRead()) {
+            FileStatus stat = new FileStatus();
+            if (FileUtils.getFileStatus(prefsFile.getPath(), stat) && prefsFile.canRead()) {
                 try {
                     FileInputStream str = new FileInputStream(prefsFile);
                     map = XmlUtils.readMapXml(str);
@@ -402,7 +406,7 @@ class ContextImpl extends Context {
                     Log.w(TAG, "getSharedPreferences", e);
                 }
             }
-            sp.replace(map);
+            sp.replace(map, stat);
         }
         return sp;
     }
@@ -963,6 +967,8 @@ class ContextImpl extends Context {
             return getWimaxController();
         } else if (NOTIFICATION_SERVICE.equals(name)) {
             return getNotificationManager();
+        } else if (PROFILE_SERVICE.equals(name)) {
+            return getProfileManager();
         } else if (KEYGUARD_SERVICE.equals(name)) {
             return new KeyguardManager();
         } else if (ACCESSIBILITY_SERVICE.equals(name)) {
@@ -1000,6 +1006,8 @@ class ContextImpl extends Context {
             return getUiModeManager();
         } else if (DOWNLOAD_SERVICE.equals(name)) {
             return getDownloadManager();
+        } else if (NFC_SERVICE.equals(name)) {
+            return getNfcManager();
         }
 
         return null;
@@ -1124,6 +1132,16 @@ class ContextImpl extends Context {
             }
         }
         return mNotificationManager;
+    }
+
+    private ProfileManager getProfileManager() {
+        synchronized (mSync) {
+            if (mProfileManager == null) {
+                mProfileManager = new ProfileManager(getOuterContext(),
+                        mMainThread.getHandler());
+            }
+        }
+        return mProfileManager;
     }
 
     private WallpaperManager getWallpaperManager() {
@@ -1256,6 +1274,15 @@ class ContextImpl extends Context {
             }
         }
         return mDownloadManager;
+    }
+
+    private NfcManager getNfcManager() {
+        synchronized (mSync) {
+            if (mNfcManager == null) {
+                mNfcManager = new NfcManager(this);
+            }
+        }
+        return mNfcManager;
     }
 
     @Override
@@ -2750,15 +2777,6 @@ class ContextImpl extends Context {
             return PackageManager.COMPONENT_ENABLED_STATE_DEFAULT;
         }
 
-        @Override
-        public void setPackageObbPath(String packageName, String path) {
-            try {
-                mPM.setPackageObbPath(packageName, path);
-            } catch (RemoteException e) {
-                // Should never happen!
-            }
-        }
-
         private final ContextImpl mContext;
         private final IPackageManager mPM;
 
@@ -2833,11 +2851,15 @@ class ContextImpl extends Context {
             }
         }
 
-        public void replace(Map newContents) {
+        /* package */ void replace(Map newContents, FileStatus stat) {
             synchronized (this) {
                 mLoaded = true;
                 if (newContents != null) {
                     mMap = newContents;
+                }
+                if (stat != null) {
+                    mStatTimestamp = stat.mtime;
+                    mStatSize = stat.size;
                 }
             }
         }

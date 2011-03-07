@@ -35,6 +35,10 @@
     <string name="defaultMsisdnAlphaTag" msgid="2850889754919584674">"MSISDN1"</string>
     <string name="mmiError" msgid="5154499457739052907">"Problema di connessione o codice MMI non valido."</string>
     <string name="mmiFdnError" msgid="5224398216385316471">"Operazione limitata solo ai numeri di selezione fissa."</string>
+
+    <!-- Name of wildcard profile. -->
+    <string name="wildcardProfile">Altro</string>
+
     <string name="serviceEnabled" msgid="8147278346414714315">"Il servizio è stato attivato."</string>
     <string name="serviceEnabledFor" msgid="6856228140453471041">"Il servizio è stato attivato per:"</string>
     <string name="serviceDisabled" msgid="1937553226592516411">"Il servizio è stato disattivato."</string>
@@ -144,6 +148,7 @@
     <string name="global_action_lock" msgid="2844945191792119712">"Blocco schermo"</string>
     <string name="global_action_power_off" msgid="4471879440839879722">"Spegni"</string>
     <string name="global_action_reboot">Riavvia</string>
+    <string name="global_action_choose_profile">Seleziona profilo</string>
     <string name="global_action_toggle_silent_mode" msgid="8219525344246810925">"Modalità silenziosa"</string>
     <string name="global_action_silent_mode_on_status" msgid="3289841937003758806">"Audio non attivo"</string>
     <string name="global_action_silent_mode_off_status" msgid="1506046579177066419">"Audio attivo"</string>
@@ -403,6 +408,17 @@
     <string name="permdesc_changeWifiState" msgid="2950383153656873267">"Consente a un\'applicazione di connettersi/disconnettersi da punti di accesso Wi-Fi e di apportare modifiche alle reti Wi-Fi configurate."</string>
     <string name="permlab_changeWifiMulticastState" msgid="1368253871483254784">"consenti ricezione multicast Wi-Fi"</string>
     <string name="permdesc_changeWifiMulticastState" msgid="8199464507656067553">"Consente a un\'applicazione di ricevere pacchetti non direttamente indirizzati al tuo dispositivo. Può essere utile durante la ricerca di servizi offerti nelle vicinanze. Consuma di più rispetto alla modalità non multicast."</string>
+
+    <!-- Title of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+    <string name="permlab_accessWimaxState">visualizzazione stato WiMax</string>
+    <!-- Description of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+    <string name="permdesc_accessWimaxState">Consente a un\'applicazione di visualizzare le informazioni relative allo stato della connessione WiMax.</string>
+
+    <!-- Title of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+    <string name="permlab_changeWimaxState">modifica stato WiMax</string>
+    <!-- Description of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+    <string name="permdesc_changeWimaxState">Consente a un\'applicazione di connettersi/disconnettersi da reti WiMax.</string>
+
     <string name="permlab_bluetoothAdmin" msgid="1092209628459341292">"gestione Bluetooth"</string>
     <string name="permdesc_bluetoothAdmin" msgid="7256289774667054555">"Consente a un\'applicazione di configurare il telefono Bluetooth locale e di rilevare e abbinare dispositivi remoti."</string>
     <string name="permlab_bluetooth" msgid="8361038707857018732">"creazione connessioni Bluetooth"</string>
@@ -425,7 +441,7 @@
     <string name="permdesc_readDictionary" msgid="1082972603576360690">"Consente a un\'applicazione di leggere parole, nomi e frasi private che l\'utente potrebbe aver memorizzato nel dizionario utente."</string>
     <string name="permlab_writeDictionary" msgid="6703109511836343341">"scrittura nel dizionario definito dall\'utente"</string>
     <string name="permdesc_writeDictionary" msgid="2241256206524082880">"Consente a un\'applicazione di scrivere nuove parole nel dizionario utente."</string>
-    <string name="permlab_sdcardWrite" product="nosdcard" msgid="85430876310764752">"modifica/eliminaz. archivio USB"</string>
+    <string name="permlab_sdcardWrite" product="nosdcard" msgid="85430876310764752">"modifica/eliminaz. contenuti archivio USB"</string>
     <string name="permlab_sdcardWrite" product="default" msgid="8079403759001777291">"modificare/eliminare i contenuti della scheda SD"</string>
     <string name="permdesc_sdcardWrite" product="nosdcard" msgid="6594393334785738252">"Consente di scrivere nell\'archivio USB."</string>
     <string name="permdesc_sdcardWrite" product="default" msgid="6643963204976471878">"Consente a un\'applicazione di scrivere sulla scheda SD."</string>
@@ -598,7 +614,7 @@
     <string name="factorytest_not_system" msgid="4435201656767276723">"L\'azione FACTORY_TEST è supportata soltanto per i pacchetti installati in /system/app."</string>
     <string name="factorytest_no_action" msgid="872991874799998561">"Nessun pacchetto trovato che fornisca l\'azione FACTORY_TEST."</string>
     <string name="factorytest_reboot" msgid="6320168203050791643">"Riavvia"</string>
-    <string name="js_dialog_title" msgid="8143918455087008109">"La pagina all\'indirizzo <xliff:g id="TITLE">%s</xliff:g> indica:"</string>
+    <string name="js_dialog_title" msgid="8143918455087008109">"Avviso relativo alla pagina <xliff:g id="TITLE">%s</xliff:g>:"</string>
     <string name="js_dialog_title_default" msgid="6961903213729667573">"JavaScript"</string>
     <string name="js_dialog_before_unload" msgid="1901675448179653089">"Uscire da questa pagina?"\n\n"<xliff:g id="MESSAGE">%s</xliff:g>"\n\n"Seleziona OK per continuare o Annulla per rimanere nella pagina corrente."</string>
     <string name="save_password_label" msgid="6860261758665825069">"Conferma"</string>

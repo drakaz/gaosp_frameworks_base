@@ -81,7 +81,7 @@ class MountService extends IMountService.Stub
     private static final boolean LOCAL_LOGD = false;
     private static final boolean DEBUG_UNMOUNT = false;
     private static final boolean DEBUG_EVENTS = false;
-    private static final boolean DEBUG_OBB = true;
+    private static final boolean DEBUG_OBB = false;
 
     private static final String TAG = "MountService";
 
@@ -1244,11 +1244,8 @@ class MountService extends IMountService.Stub
                 // Override for isUsbMassStorageEnabled()
                 setUmsEnabling(enable);
                 UmsEnableCallBack umscb = new UmsEnableCallBack(path, method, true);
-                if (isExternalStorage(path)) {
-                    mHandler.sendMessage(mHandler.obtainMessage(H_UNMOUNT_PM_UPDATE, umscb));
-                } else {
-                    umscb.handleFinished();
-                }
+                int msg = isExternalStorage(path) ? H_UNMOUNT_PM_UPDATE : H_UNMOUNT_MS;
+                mHandler.sendMessage(mHandler.obtainMessage(msg, umscb));
                 // Clear override
                 setUmsEnabling(false);
             }
@@ -1318,11 +1315,8 @@ class MountService extends IMountService.Stub
             return;
         }
         UnmountCallBack ucb = new UnmountCallBack(path, force);
-        if (isExternalStorage(path)) {
-            mHandler.sendMessage(mHandler.obtainMessage(H_UNMOUNT_PM_UPDATE, ucb));
-        } else {
-            ucb.handleFinished();
-        }
+        int msg = isExternalStorage(path) ? H_UNMOUNT_PM_UPDATE : H_UNMOUNT_MS;
+        mHandler.sendMessage(mHandler.obtainMessage(msg, ucb));
     }
 
     public int formatVolume(String path) {
