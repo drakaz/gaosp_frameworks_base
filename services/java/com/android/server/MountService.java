@@ -342,6 +342,13 @@ class MountService extends IMountService.Stub
                 case H_UNMOUNT_PM_UPDATE: {
                     if (DEBUG_UNMOUNT) Slog.i(TAG, "H_UNMOUNT_PM_UPDATE");
                     UnmountCallBack ucb = (UnmountCallBack) msg.obj;
+                    if (!mUpdatingStatus && !isExternalStorage(ucb.path)) {
+                        // If PM isn't already updating, and this isn't an ASEC
+                        // mount, then go ahead and do the unmount immediately.
+                        if (DEBUG_UNMOUNT) Slog.i(TAG, " skipping PackageManager for " + ucb.path);
+                        ucb.handleFinished();
+                        break;
+                    }
                     mForceUnmounts.add(ucb);
                     if (DEBUG_UNMOUNT) Slog.i(TAG, " registered = " + mUpdatingStatus);
                     // Register only if needed.
@@ -1015,23 +1022,29 @@ class MountService extends IMountService.Stub
             mSendUmsConnectedOnBoot = avail;
         }
 
-        final String path = Environment.getExternalStorageDirectory().getPath();
-        if (avail == false && getVolumeState(path).equals(Environment.MEDIA_SHARED)) {
+        final ArrayList<String> volumes = getShareableVolumes();
+        boolean mediaShared = false;
+        for (String path: volumes) {
+            if (getVolumeState(path).equals(Environment.MEDIA_SHARED))
+                mediaShared = true;
+        }
+        if (avail == false && mediaShared) {
             /*
              * USB mass storage disconnected while enabled
              */
-            final ArrayList<String> volumes = getShareableVolumes();
             new Thread() {
                 public void run() {
                     try {
                         int rc;
                         Slog.w(TAG, "Disabling UMS after cable disconnect");
                         for (String path: volumes) {
-                            doShareUnshareVolume(path, "ums", false);
-                            if ((rc = doMountVolume(path)) != StorageResultCode.OperationSucceeded) {
-                                Slog.e(TAG, String.format(
+                            if (getVolumeState(path).equals(Environment.MEDIA_SHARED)) {
+                                doShareUnshareVolume(path, "ums", false);
+                                if ((rc = doMountVolume(path)) != StorageResultCode.OperationSucceeded) {
+                                    Slog.e(TAG, String.format(
                                         "Failed to remount {%s} on UMS enabled-disconnect (%d)",
-                                                path, rc));
+                                        path, rc));
+                                }
                             }
                         }
                     } catch (Exception ex) {
@@ -1156,27 +1169,23 @@ class MountService extends IMountService.Stub
                     Slog.e(TAG, "Interrupted while waiting for media", iex);
                     break;
                 }
-                state = Environment.getExternalStorageState();
             }
-            if (retries == 0) {
-                Slog.e(TAG, "Timed out waiting for media to check");
-            }
-        }
 
-        if (state.equals(Environment.MEDIA_MOUNTED)) {
-            // Post a unmount message.
-            ShutdownCallBack ucb = new ShutdownCallBack(path, observer);
-            mHandler.sendMessage(mHandler.obtainMessage(H_UNMOUNT_PM_UPDATE, ucb));
-        } else if (observer != null) {
-            /*
-             * Observer is waiting for onShutDownComplete when we are done.
-             * Since nothing will be done send notification directly so shutdown
-             * sequence can continue.
-             */
-            try {
-                observer.onShutDownComplete(StorageResultCode.OperationSucceeded);
-            } catch (RemoteException e) {
-                Slog.w(TAG, "RemoteException when shutting down");
+            if (state.equals(Environment.MEDIA_MOUNTED)) {
+                // Post a unmount message.
+                ShutdownCallBack ucb = new ShutdownCallBack(path, observer);
+                mHandler.sendMessage(mHandler.obtainMessage(H_UNMOUNT_PM_UPDATE, ucb));
+            } else if (observer != null) {
+                /*
+                 * Observer is waiting for onShutDownComplete when we are done.
+                 * Since nothing will be done send notification directly so shutdown
+                 * sequence can continue.
+                 */
+                try {
+                    observer.onShutDownComplete(StorageResultCode.OperationSucceeded);
+                } catch (RemoteException e) {
+                    Slog.w(TAG, "RemoteException when shutting down");
+                }
             }
         }
     }
@@ -1244,8 +1253,7 @@ class MountService extends IMountService.Stub
                 // Override for isUsbMassStorageEnabled()
                 setUmsEnabling(enable);
                 UmsEnableCallBack umscb = new UmsEnableCallBack(path, method, true);
-                int msg = isExternalStorage(path) ? H_UNMOUNT_PM_UPDATE : H_UNMOUNT_MS;
-                mHandler.sendMessage(mHandler.obtainMessage(msg, umscb));
+                mHandler.sendMessage(mHandler.obtainMessage(H_UNMOUNT_PM_UPDATE, umscb));
                 // Clear override
                 setUmsEnabling(false);
             }
@@ -1315,8 +1323,7 @@ class MountService extends IMountService.Stub
             return;
         }
         UnmountCallBack ucb = new UnmountCallBack(path, force);
-        int msg = isExternalStorage(path) ? H_UNMOUNT_PM_UPDATE : H_UNMOUNT_MS;
-        mHandler.sendMessage(mHandler.obtainMessage(msg, ucb));
+        mHandler.sendMessage(mHandler.obtainMessage(H_UNMOUNT_PM_UPDATE, ucb));
     }
 
     public int formatVolume(String path) {
