@@ -91,9 +91,6 @@ public class Environment {
 
     private static final File EXTERNAL_STORAGE_DIRECTORY
             = getDirectory("EXTERNAL_STORAGE", "/sdcard");
-            
-    private static final File EXTERNAL_STORAGE2_DIRECTORY
-            = getDirectory("EXTERNAL_STORAGE2", "/sdcard2");
 
     private static final File EXTERNAL_STORAGE_ANDROID_DATA_DIRECTORY
             = new File (new File(getDirectory("EXTERNAL_STORAGE", "/sdcard"),
@@ -155,25 +152,6 @@ public class Environment {
         return EXTERNAL_STORAGE_DIRECTORY;
     }
 
-   /**
-     * Gets the Android external storage (external sdcard for I7500) directory
-     * @hide
-     */
-    public static File getExternalStorage2Directory() {
-        return EXTERNAL_STORAGE2_DIRECTORY;
-    }
-
-     /**
-     * Gets the Android external SD.  This directory may not
-     * currently be accessible if it has been mounted by the user on their
-     * computer, has been removed from the device, or some other problem has
-     * happened.  You can determine its current state with
-     * {@link #getExternalStorageState()}.
-     */
-    public static File getExternalSdDirectory() {
-        return EXTERNAL_STORAGE2_DIRECTORY;
-    }
-    
     /**
      * Standard directory in which to place any audio files that should be
      * in the regular list of music for the user.
@@ -426,26 +404,6 @@ public class Environment {
         return Resources.getSystem().getBoolean(
                 com.android.internal.R.bool.config_externalStorageRemovable);
     }
-    
-   /**
-     * Gets the current state of the external sdcard device.
-     * Note: This call should be deprecated as it doesn't support
-     * multiple volumes.
-     * 
-     * <p>See {@link #getExternalStorageDirectory()} for an example of its use.
-     */
-    public static String getExternalSdState() {
-        try {
-            if (mMntSvc == null) {
-                mMntSvc = IMountService.Stub.asInterface(ServiceManager
-                                                         .getService("mount"));
-            }
-            return mMntSvc.getVolumeState(getExternalSdDirectory().toString());
-        } catch (Exception rex) {
-            return Environment.MEDIA_REMOVED;
-        }
-    }
-
 
     static File getDirectory(String variableName, String defaultPath) {
         String path = System.getenv(variableName);
