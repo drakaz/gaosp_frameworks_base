@@ -183,7 +183,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
 
     // Useful scan codes.
     private static final int SW_LID = 0x00;
-    private static final int BTN_MOUSE = 0x110;
+    // Use I7500 HOLD keycode as BTN_MOUSE
+    private static final int BTN_MOUSE = 0x152;
     
     final Object mLock = new Object();
     
@@ -321,6 +322,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
 
     // Behavior of trackball wake
     boolean mTrackballWakeScreen;
+    boolean mTrackballUnlockScreen;
 
     // Behavior of volbtn music controls
     boolean mVolBtnMusicControls;
@@ -513,10 +515,10 @@ public class PhoneWindowManager implements WindowManagerPolicy {
 
     private void interceptPowerKeyDown(boolean handled) {
         mPowerKeyHandled = handled;
-        if (!handled) {
-            mHandler.postDelayed(mPowerLongPress, ViewConfiguration.getGlobalActionKeyTimeout());
-        }
-    }
+		if (!handled) {
+			mHandler.postDelayed(mPowerLongPress, ViewConfiguration.getGlobalActionKeyTimeout());
+		}
+	}
 
     private boolean interceptPowerKeyUp(boolean canceled) {
         if (!mPowerKeyHandled) {
@@ -780,6 +782,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     "fancy_rotation_anim", 0) != 0 ? 0x80 : 0;
             mTrackballWakeScreen = (Settings.System.getInt(resolver,
                     Settings.System.TRACKBALL_WAKE_SCREEN, 1) == 1);
+            mTrackballUnlockScreen = (Settings.System.getInt(resolver,
+                    Settings.System.TRACKBALL_UNLOCK_SCREEN, 0) == 1);
             mVolBtnMusicControls = (Settings.System.getInt(resolver,
                     Settings.System.VOLBTN_MUSIC_CONTROLS, 1) == 1);
             mCamBtnMusicControls = (Settings.System.getInt(resolver,
@@ -2093,7 +2097,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                                         mKeyguardMediator.isShowingAndNotHidden() :
                                         mKeyguardMediator.isShowing());
 
-        if (false) {
+        if (true) {
             Log.d(TAG, "interceptKeyTq keycode=" + keyCode
                   + " screenIsOn=" + isScreenOn + " keyguardActive=" + keyguardActive);
         }
@@ -2123,7 +2127,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
 
             final boolean isWakeKey = (policyFlags
                     & (WindowManagerPolicy.FLAG_WAKE | WindowManagerPolicy.FLAG_WAKE_DROPPED)) != 0
-                    || ((keyCode == BTN_MOUSE) && mTrackballWakeScreen);
+                    || ((keyCode == BTN_MOUSE) && mTrackballWakeScreen) || ((keyCode == KeyEvent.KEYCODE_HOLD) && mTrackballWakeScreen);
 
             if (down && isWakeKey) {
                 if (keyguardActive) {
@@ -2274,6 +2278,14 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                 }
                 break;
             }
+            
+            case KeyEvent.KEYCODE_HOLD: {
+				if (down && isScreenOn && mTrackballWakeScreen && !keyguardActive) {
+					result &= ~ACTION_PASS_TO_USER;
+					result = (result & ~ACTION_POKE_USER_ACTIVITY) | ACTION_GO_TO_SLEEP;
+				}
+				break;
+			}
 
             case KeyEvent.KEYCODE_HEADSETHOOK:
             case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
