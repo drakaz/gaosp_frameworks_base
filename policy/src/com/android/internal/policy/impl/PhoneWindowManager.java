@@ -2059,7 +2059,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
 
             final boolean isWakeKey = (policyFlags
                     & (WindowManagerPolicy.FLAG_WAKE | WindowManagerPolicy.FLAG_WAKE_DROPPED)) != 0
-                    || ((keyCode == BTN_MOUSE) && mTrackballWakeScreen) || ((keyCode == KeyEvent.KEYCODE_HOLD) && mTrackballWakeScreen);
+                    || ((keyCode == BTN_MOUSE) && mTrackballWakeScreen) || ((keyCode == KeyEvent.KEYCODE_HOLD) && mTrackballWakeScreen)
                     || ((keyCode == BTN_MOUSE) && mTrackballWakeScreen)
                     || ((keyCode == KeyEvent.KEYCODE_VOLUME_UP) && mVolumeWakeScreen)
                     || ((keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) && mVolumeWakeScreen);

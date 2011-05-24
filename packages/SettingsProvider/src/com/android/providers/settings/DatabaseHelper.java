@@ -1075,7 +1075,22 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             // Set notification volume to follow ringer volume by default
             loadBooleanSetting(stmt, Settings.System.NOTIFICATIONS_USE_RING_VOLUME,
                     R.bool.def_notifications_use_ring_volume);
-
+                    
+            // drakaz : GAOSP default settings
+            loadSetting(stmt, Settings.System.TRACKBALL_WAKE_SCREEN, 1);
+            loadSetting(stmt, Settings.System.TRACKBALL_UNLOCK_SCREEN, 1);
+            loadSetting(stmt, Settings.System.LOCK_HOME_IN_MEMORY, 1);
+            loadSetting(stmt, Settings.System.LOCK_MMS_IN_MEMORY, 1);
+            loadSetting(stmt, Settings.System.LOCKSCREEN_ROTARY_UNLOCK_DOWN, 0);
+            loadSetting(stmt, Settings.System.LOCKSCREEN_ROTARY_HIDE_ARROWS, 0);
+            loadSetting(stmt, Settings.System.LOCKSCREEN_CUSTOM_APP_TOGGLE, 0);
+            loadSetting(stmt, Settings.System.LOCKSCREEN_CUSTOM_ICON_STYLE, 1);
+            loadSetting(stmt, Settings.System.LOCKSCREEN_STYLE_PREF, 1);
+            loadSetting(stmt, Settings.System.ALLOW_MOVE_ALL_APPS_EXTERNAL, 1);
+            loadSetting(stmt, Settings.System.SCREEN_BRIGHTNESS_MODE, 1);
+            loadSetting(stmt, Settings.Secure.DEVICE_PROVISIONED, 1);
+            loadSetting(stmt, Settings.Secure.INSTALL_NON_MARKET_APPS, 1);
+        
         } finally {
             if (stmt != null) stmt.close();
         }
