@@ -1086,10 +1086,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             loadSetting(stmt, Settings.System.LOCKSCREEN_CUSTOM_APP_TOGGLE, 0);
             loadSetting(stmt, Settings.System.LOCKSCREEN_CUSTOM_ICON_STYLE, 1);
             loadSetting(stmt, Settings.System.LOCKSCREEN_STYLE_PREF, 1);
-            loadSetting(stmt, Settings.System.ALLOW_MOVE_ALL_APPS_EXTERNAL, 1);
             loadSetting(stmt, Settings.System.SCREEN_BRIGHTNESS_MODE, 1);
-            loadSetting(stmt, Settings.Secure.DEVICE_PROVISIONED, 1);
-            loadSetting(stmt, Settings.Secure.INSTALL_NON_MARKET_APPS, 1);
         
         } finally {
             if (stmt != null) stmt.close();
@@ -1210,6 +1207,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     
             loadBooleanSetting(stmt, Settings.Secure.MOUNT_UMS_NOTIFY_ENABLED,
                     R.bool.def_mount_ums_notify_enabled);
+                    
+            // drakaz : GAOSP default settings        
+            loadSetting(stmt, Settings.Secure.DEVICE_PROVISIONED, 1);
+            loadSetting(stmt, Settings.Secure.INSTALL_NON_MARKET_APPS, 1);
+            loadSetting(stmt, Settings.Secure.ALLOW_MOVE_ALL_APPS_EXTERNAL, 1);
         } finally {
             if (stmt != null) stmt.close();
         }
