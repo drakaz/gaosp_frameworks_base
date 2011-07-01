@@ -146,18 +146,25 @@ LOCAL_SRC_FILES:= \
 
 ifeq ($(BOARD_HAVE_FM_RADIO),true)
 ifeq ($(BOARD_FM_DEVICE),si4709)
-	LOCAL_SRC_FILES += android_hardware_fm_si4709.cpp
+    LOCAL_SRC_FILES += android_hardware_fm_si4709.cpp
 else
-	ifeq ($(BOARD_WLAN_DEVICE),bcm4329)
-		LOCAL_SRC_FILES += android_hardware_fm_bcm4325.cpp
-	endif
-	ifeq ($(BOARD_WLAN_DEVICE),wl1251)
-		LOCAL_SRC_FILES += android_hardware_fm_wl1271.cpp
-	endif
-	ifeq ($(BOARD_WLAN_DEVICE),wl1271)
-		LOCAL_SRC_FILES += android_hardware_fm_wl1271.cpp
-	endif
-	endif
+    ifeq ($(BOARD_FM_DEVICE),si4708)
+        LOCAL_SRC_FILES += android_hardware_fm_si4708.cpp
+    else
+        ifeq ($(BOARD_WLAN_DEVICE),bcm4329)
+            LOCAL_SRC_FILES += android_hardware_fm_bcm4325.cpp
+        endif
+        ifeq ($(BOARD_WLAN_DEVICE),bcm4325)
+            LOCAL_SRC_FILES += android_hardware_fm_bcm4325.cpp
+        endif
+        ifeq ($(BOARD_WLAN_DEVICE),wl1251)
+            LOCAL_SRC_FILES += android_hardware_fm_wl1271.cpp
+        endif
+        ifeq ($(BOARD_WLAN_DEVICE),wl1271)
+            LOCAL_SRC_FILES += android_hardware_fm_wl1271.cpp
+        endif
+    endif
+endif
 endif
 
 LOCAL_C_INCLUDES += \
@@ -214,6 +221,8 @@ LOCAL_SHARED_LIBRARIES := \
 	libjpeg \
 	libnfc_ndef
 
+LOCAL_STATIC_LIBRARIES := libreboot
+
 ifeq ($(BOARD_HAVE_BLUETOOTH),true)
 LOCAL_C_INCLUDES += \
 	external/dbus \
@@ -240,10 +249,6 @@ endif
 
 ifeq ($(WITH_MALLOC_LEAK_CHECK),true)
 	LOCAL_CFLAGS += -DMALLOC_LEAK_CHECK
-endif
-
-ifneq ($(TARGET_RECOVERY_PRE_COMMAND),)
-	LOCAL_CFLAGS += -DRECOVERY_PRE_COMMAND='$(TARGET_RECOVERY_PRE_COMMAND)'
 endif
 
 LOCAL_MODULE:= libandroid_runtime

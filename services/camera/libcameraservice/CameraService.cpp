@@ -44,6 +44,8 @@
 #include "gralloc_priv.h"
 #endif
 
+#include <cutils/properties.h>
+
 namespace android {
 
 // ----------------------------------------------------------------------------
@@ -79,6 +81,23 @@ static int getCallingPid() {
 static int getCallingUid() {
     return IPCThreadState::self()->getCallingUid();
 }
+
+#if defined(BOARD_USE_FROYO_LIBCAMERA) || defined(BOARD_HAVE_HTC_FFC)
+#define HTC_SWITCH_CAMERA_FILE_PATH "/sys/android_camera2/htcwc"
+static void htcCameraSwitch(int cameraId)
+{
+    char buffer[16];
+    int fd;
+
+    if (access(HTC_SWITCH_CAMERA_FILE_PATH, W_OK) == 0) {
+        snprintf(buffer, sizeof(buffer), "%d", cameraId);
+
+        fd = open(HTC_SWITCH_CAMERA_FILE_PATH, O_WRONLY);
+        write(fd, buffer, strlen(buffer));
+        close(fd);
+    }
+}
+#endif
 
 // ----------------------------------------------------------------------------
 
@@ -119,13 +138,35 @@ int32_t CameraService::getNumberOfCameras() {
     return mNumberOfCameras;
 }
 
+#if defined(BOARD_USE_FROYO_LIBCAMERA) || defined(BOARD_HAVE_HTC_FFC)
+#ifndef FIRST_CAMERA_FACING
+#define FIRST_CAMERA_FACING CAMERA_FACING_BACK
+#endif
+#ifndef FIRST_CAMERA_ORIENTATION
+#define FIRST_CAMERA_ORIENTATION 90
+#endif
+static const CameraInfo sCameraInfo[] = {
+    {
+        FIRST_CAMERA_FACING,
+        FIRST_CAMERA_ORIENTATION,  /* orientation */
+    },
+    {
+        CAMERA_FACING_FRONT,
+        270, /* orientation */
+    }
+};
+#endif
+
 status_t CameraService::getCameraInfo(int cameraId,
                                       struct CameraInfo* cameraInfo) {
     if (cameraId < 0 || cameraId >= mNumberOfCameras) {
         return BAD_VALUE;
     }
-
+#if defined(BOARD_USE_FROYO_LIBCAMERA) || defined(BOARD_HAVE_HTC_FFC)
+    memcpy(cameraInfo, &sCameraInfo[cameraId], sizeof(CameraInfo));
+#else
     HAL_getCameraInfo(cameraId, cameraInfo);
+#endif
     return OK;
 }
 
@@ -164,13 +205,35 @@ sp<ICamera> CameraService::connect(
         return NULL;
     }
 
+#if defined(BOARD_USE_FROYO_LIBCAMERA) || defined(BOARD_HAVE_HTC_FFC)
+    htcCameraSwitch(cameraId);
+#endif
+
     sp<CameraHardwareInterface> hardware = HAL_openCameraHardware(cameraId);
     if (hardware == NULL) {
         LOGE("Fail to open camera hardware (id=%d)", cameraId);
         return NULL;
     }
+
+#if defined(BOARD_USE_REVERSE_FFC)
+    if (cameraId == 1) {
+        /* Change default parameters for the front camera */
+        CameraParameters params(hardware->getParameters());
+        params.set("front-camera-mode", "reverse"); // default is "mirror"
+        hardware->setParameters(params);
+    }
+#endif
+
     CameraInfo info;
     HAL_getCameraInfo(cameraId, &info);
+
+    /* If the FFC claims standard back-facing orientation,
+     * treat it as such. This avoid all the mirroring and rotation
+     * hooks */
+    if (info.facing == CAMERA_FACING_FRONT && info.orientation == 90) {
+        info.facing = CAMERA_FACING_BACK;
+    }
+
     client = new Client(this, cameraClient, hardware, cameraId, info.facing,
                         callingPid);
     mClient[cameraId] = client;
@@ -283,8 +346,18 @@ void CameraService::loadSound() {
     LOG1("CameraService::loadSound ref=%d", mSoundRef);
     if (mSoundRef++) return;
 
-    mSoundPlayer[SOUND_SHUTTER] = newMediaPlayer("/system/media/audio/ui/camera_click.ogg");
-    mSoundPlayer[SOUND_RECORDING] = newMediaPlayer("/system/media/audio/ui/VideoRecord.ogg");
+    char value[PROPERTY_VALUE_MAX];
+    property_get("persist.camera.shutter.disable", value, "0");
+    int disableSound = atoi(value);
+
+    if(!disableSound) {
+        mSoundPlayer[SOUND_SHUTTER] = newMediaPlayer("/system/media/audio/ui/camera_click.ogg");
+        mSoundPlayer[SOUND_RECORDING] = newMediaPlayer("/system/media/audio/ui/VideoRecord.ogg");
+    }
+    else {
+        mSoundPlayer[SOUND_SHUTTER] = NULL;
+        mSoundPlayer[SOUND_RECORDING] = NULL;
+    }
 }
 
 void CameraService::releaseSound() {
@@ -1434,45 +1507,12 @@ status_t CameraService::dump(int fd, const Vector<String16>& args) {
 }
 
 #ifdef BOARD_USE_FROYO_LIBCAMERA
-
-#ifndef FIRST_CAMERA_FACING
-#define FIRST_CAMERA_FACING CAMERA_FACING_BACK
-#endif
-#ifndef FIRST_CAMERA_ORIENTATION
-#define FIRST_CAMERA_ORIENTATION 90
-#endif
-
-static const CameraInfo sCameraInfo[] = {
-    {
-        FIRST_CAMERA_FACING,
-        FIRST_CAMERA_ORIENTATION,  /* orientation */
-    },
-    {
-        CAMERA_FACING_FRONT,
-        270, /* orientation */
-    }
-};
-
-#define HTC_SWITCH_CAMERA_FILE_PATH "/sys/android_camera2/htcwc"
-
 static int getNumberOfCameras() {
     if (access(HTC_SWITCH_CAMERA_FILE_PATH, W_OK) == 0) {
         return 2;
     }
     /* FIXME: Support non-HTC front camera */
     return 1;
-}
-
-static void htcCameraSwitch(int cameraId)
-{
-    char buffer[16];
-    int fd;
-
-    snprintf(buffer, sizeof(buffer), "%d", cameraId);
-
-    fd = open(HTC_SWITCH_CAMERA_FILE_PATH, O_WRONLY);
-    write(fd, buffer, strlen(buffer));
-    close(fd);
 }
 
 extern "C" int HAL_getNumberOfCameras()
@@ -1490,21 +1530,6 @@ extern "C" sp<CameraHardwareInterface> openCameraHardware(int cameraId);
 extern "C" sp<CameraHardwareInterface> HAL_openCameraHardware(int cameraId)
 {
     LOGV("openCameraHardware: call createInstance");
-    if (getNumberOfCameras() == 2) {
-        htcCameraSwitch(cameraId);
-#ifdef BOARD_USE_REVERSE_FFC
-        if (cameraId == 1) {
-            /* Change default parameters for the front camera */
-            sp<CameraHardwareInterface> hardware = openCameraHardware(cameraId);
-            if (hardware != NULL) {
-                CameraParameters params(hardware->getParameters());
-                params.set("front-camera-mode", "reverse"); // default is "mirror"
-                hardware->setParameters(params);
-            }
-            return hardware;
-        }
-#endif
-    }
     return openCameraHardware(cameraId);
 }
 #endif
